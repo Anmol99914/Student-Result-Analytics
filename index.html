@@ -1,11 +1,96 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Result Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <style>
+        .carousel-img {
+            height: 450px;
+            /* Adjust height as needed (e.g., 400px–500px) */
+            object-fit: cover;
+            /* Keeps the image centered & cropped properly */
+            object-position: center;
+            /* Ensures focus stays in the middle */
+            border-radius: 8px;
+            /* Optional: adds rounded corners */
+        }
+
+        .notice-board {
+            list-style-position: inside;
+            text-align: center;
+        }
+    </style>
 </head>
+
 <body>
-    <p>Hi</p>
+    <nav class="navbar navbar-expand-lg bg-primary navbar-dark">
+        <div class="container-fluid">
+            
+    <span class="navbar-text fw-semibold">
+        Student Result Analytics (SRA)
+    </span>
+
+    <!-- Nav items container -->
+    <div class="d-flex ms-auto">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Students</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Admin</a>
+            </li>
+        </ul>
+    </div>
+    </div>
+    </nav> 
+
+    
+
+
+    <div id="carouselExampleFade" class="carousel slide carousel-fade my-4" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="1.jpg" class="d-block w-100 carousel-img" alt="Image1">
+            </div>
+            <div class="carousel-item">
+                <img src="2.jpg" class="d-block w-100 carousel-img" alt="Image2">
+            </div>
+            <div class="carousel-item">
+                <img src="3.jpg" class="d-block w-100  carousel-img" alt="Image3">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <div class="notice-board">
+        <h3>Notice Board</h3>
+        <ul>
+            <li><a href="#">Notice Issue 1</a></li>
+            <li><a href="#">Notice Issue 2</a></li>
+            <li><a href="#">Notice Issue 3</a></li>
+        </ul>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous">
+        </script>
+
+
 </body>
+
 </html>
