@@ -13,7 +13,7 @@ $valid_password = "iamthefreakingadmin";
 if($username === $valid_username && $password === $valid_password){
     $_SESSION['admin_logged_in'] = true;
     $_SESSION['admin_username'] = $username;
-    header("Location: admin_dashboard.php");
+    header("Location: admin_main_page.php");
     exit();
 }
 else{
