@@ -39,7 +39,7 @@ if(!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true)
       <div class="container-fluid">
         <a class="navbar-brand">Student Result Analytics | Admin</a>
         <form class="d-flex" role="search" action="logout.php">
-          <button class="btn btn-outline-success" type="submit"><i class="bi bi-box-arrow-right"></i> Logout</button>
+          <button class="btn btn-outline-danger" type="submit"><i class="bi bi-box-arrow-right"></i> Logout</button>
         </form>
       </div>
     </nav>

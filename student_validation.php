@@ -22,6 +22,9 @@ if (empty($roll) || empty($semester)) {
 $sql = "SELECT * FROM student WHERE student_id = '$roll' AND semester_id = '$semester'";
 $result = mysqli_query($connection, $sql);
 
+// The PHP script checks if the Roll ID and semester exist in the database.
+// If valid, it stores them in the session
+
 if(mysqli_num_rows($result) > 0){
     $_SESSION['student_logged_in'] = true;
     $_SESSION['student_id'] = $roll;
