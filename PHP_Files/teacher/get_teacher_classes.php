@@ -1,6 +1,13 @@
 <?php
 session_start();
+// Add at the VERY TOP of each PHP file
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+header("Pragma: no-cache");
 require_once '../../config.php';
+
+// Also add MySQL query that doesn't use cache
+$connection->query("SET SESSION query_cache_type = OFF");
 
 if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != true) {
     http_response_code(401);

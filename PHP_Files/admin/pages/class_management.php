@@ -1,7 +1,9 @@
 <?php
 // class_management.php - Class Management Page
 // include('../../../config.php');
-include(__DIR__ . '/../../../config.php');
+// include(__DIR__ . '/../../../config.php');
+require_once '../../../config.php';
+
 
 ?>
 <div class="class-management-container">

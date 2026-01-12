@@ -1,6 +1,10 @@
 <!-- teacher_add_student_form.php -->
 <?php
 session_start();
+// Add at the VERY TOP of each PHP file
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+header("Pragma: no-cache");
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'teacher'){
     echo "<p class='text-danger'>Unauthorized</p>";
     exit();

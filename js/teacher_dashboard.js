@@ -143,8 +143,14 @@ const TeacherDashboard = {
     loadTeacherClasses: function() {
         const container = document.getElementById('classes-container');
         if (!container) return;
+         // Add cache-busting
+        const cacheBuster = 't=' + new Date().getTime();
         
-        fetch('get_teacher_classes.php')
+        fetch('get_teacher_classes.php'+ cacheBuster, {
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        })
             .then(response => response.json())
             .then(data => {
                 console.log('Classes data:', data);
@@ -274,8 +280,13 @@ const TeacherDashboard = {
         this.setActiveLink('results');
         this.currentPage = 'results';
         
-        this.loadContent('Results/get_classes_for_results.php', 'Enter Results', 'bg-warning text-dark', 'trophy');
-    },
+         // Force fresh load with timestamp
+    const timestamp = new Date().getTime();
+    this.loadContent('Results/get_classes_for_results.php?t=' + timestamp, 
+                     'Enter Results', 
+                     'bg-warning text-dark', 
+                     'trophy');
+},
     
     showProfile: function() {
         this.setActiveLink('profile');
@@ -288,6 +299,11 @@ const TeacherDashboard = {
     loadContent: function(url, title, headerClass, icon) {
         const mainContent = document.getElementById('main-content');
         if (!mainContent) return;
+
+        // Add timestamp to prevent caching
+        const cacheBuster = 't=' + new Date().getTime();
+        const separator = url.includes('?') ? '&' : '?';
+        const fullUrl = url + separator + cacheBuster;
         
         // Show loading
         mainContent.innerHTML = `
@@ -310,7 +326,14 @@ const TeacherDashboard = {
         `;
         
         // Fetch content
-        fetch(url)
+        fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        })
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

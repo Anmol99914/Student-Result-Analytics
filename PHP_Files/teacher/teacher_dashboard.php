@@ -18,6 +18,9 @@ $teacher_name = $_SESSION['teacher_name'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Student Result Analytics - Teacher</title>
     
     <!-- Bootstrap CSS -->
@@ -75,12 +78,12 @@ $teacher_name = $_SESSION['teacher_name'];
                             <span>My Classes</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="#" onclick="loadAddStudentForm(); return false;" class="nav-link">
                             <i class="bi bi-person-plus"></i>
                             <span>Add Student</span>
                         </a>
-                    </li>
+                    </li> -->
                     <li class="nav-item">
                         <a href="#" onclick="loadMyStudents(); return false;" class="nav-link">
                             <i class="bi bi-people"></i>
@@ -123,11 +126,11 @@ $teacher_name = $_SESSION['teacher_name'];
                                 <i class="bi bi-table me-2"></i> My Classes
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
+                        <!-- <li class="nav-item mb-2">
                             <a href="#" onclick="loadAddStudentForm(); closeOffcanvas(); return false;" class="nav-link">
                                 <i class="bi bi-person-plus me-2"></i> Add Student
                             </a>
-                        </li>
+                        </li> -->
                         <li class="nav-item mb-2">
                             <a href="#" onclick="loadMyStudents(); closeOffcanvas(); return false;" class="nav-link">
                                 <i class="bi bi-people me-2"></i> My Students
@@ -165,6 +168,10 @@ $teacher_name = $_SESSION['teacher_name'];
     <!-- Teacher JavaScript Files -->
     <script src="../../js/teacher/teacher-common.js"></script>
     <script src="../../js/teacher/teacher-main.js"></script>
+
+    <!-- Load results system JavaScript -->
+    <script src="../../js/results-main.js"></script>
+    <script src="../../js/results-marks.js"></script>
 
     <script>
     // Pass PHP variables to JavaScript

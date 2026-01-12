@@ -27,9 +27,37 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Our CSS Files -->
     <link rel="stylesheet" href="../../css/admin/admin-main.css">
     <link rel="stylesheet" href="../../css/admin/admin-responsive.css">
+    <link rel="stylesheet" href="css/admin/verified-results.css">
+    <script src="js/admin/verified-results.js" defer></script>
+
+    <script>
+// EMERGENCY: Define loadResultsVerification immediately ughhhh
+        window.loadResultsVerification = function() {
+            console.log('loadResultsVerification called (temporary)');
+            
+            // If admin-main.js hasn't loaded yet, wait for it
+            if (typeof loadPage === 'function') {
+                console.log('Loading Results Verification...');
+                loadPage('Results/pending_results.php');
+            } else {
+                console.error('loadPage function not available yet');
+                // Wait a bit and try again
+                setTimeout(function() {
+                    if (typeof loadPage === 'function') {
+                        loadPage('Results/pending_results.php');
+                    } else {
+                        alert('Please wait for page to load completely');
+                    }
+                }, 500);
+            }
+        };
+        console.log('loadResultsVerification defined (temporary)');
+        </script>
 
     <script src="../../js/admin/admin-main.js"></script>
     <script src="../../js/admin/common.js"></script>
+    <!-- Load Results Verification JS -->
+    <!-- <script src="js/admin/results-verification.js"></script> -->
 
 </head>
 <body>
@@ -97,11 +125,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </li>
                     <!-- Results -->
                     <li class="nav-item mb-2">
-            <a href="results.php" class="nav-link text-white">
-                <i class="bi bi-trophy"></i> Results
-            </a>
-        </li>
-    
+                    <a href="results.php" class="nav-link text-white">
+                        <i class="bi bi-trophy"></i> Results
+                    </a>
+                </li>
+                <!-- Result Verification -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="loadResultsVerification(); return false;">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Results Verification</span>
+                        <span class="badge bg-danger" id="pending-count">0</span>
+                    </a>
+                </li>
+                    
                     
                     <!-- Assign Teachers -->
                     <!-- <li class="nav-item mb-2">

@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once '../../../config.php';
+// Also add MySQL query that doesn't use cache
+$connection->query("SET SESSION query_cache_type = OFF");
 
 if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != true) {
     echo '<div class="alert alert-danger">Please login first</div>';
@@ -53,9 +55,10 @@ if ($students_result->num_rows === 0) {
 $existing_marks = [];
 $marks_sql = "SELECT student_id, marks_obtained, total_marks, percentage, grade, verification_status 
               FROM result 
-              WHERE subject_id = ? AND class_id = ? AND entered_by_teacher_id = ?";
+              WHERE subject_id = ? AND entered_by_teacher_id = ? 
+              AND student_id IN (SELECT student_id FROM student WHERE class_id = ?)";
 $marks_stmt = $connection->prepare($marks_sql);
-$marks_stmt->bind_param("iii", $subject_id, $class_id, $_SESSION['teacher_id']);
+$marks_stmt->bind_param("iii", $subject_id, $_SESSION['teacher_id'], $class_id);
 $marks_stmt->execute();
 $marks_result = $marks_stmt->get_result();
 
@@ -63,279 +66,177 @@ while ($row = $marks_result->fetch_assoc()) {
     $existing_marks[$row['student_id']] = $row;
 }
 
-// Start output
-echo '<div class="card">';
-echo '<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">';
-echo '<div>';
-echo '<h5 class="mb-0"><i class="bi bi-pencil-square"></i> Enter Marks</h5>';
-echo '<small class="opacity-75">' . htmlspecialchars($subject_name) . ' | ' . 
-     htmlspecialchars($class_data['faculty'] ?? 'Class') . ' - Semester ' . ($class_data['semester'] ?? '') . '</small>';
-echo '</div>';
-echo '<button class="btn btn-sm btn-light" onclick="loadClassSubjects(' . $class_id . ', \'' . htmlspecialchars($class_data['faculty'] ?? '') . '\', ' . ($class_data['semester'] ?? 0) . ')">';
-echo '<i class="bi bi-arrow-left"></i> Back to Subjects';
-echo '</button>';
-echo '</div>';
-
-echo '<div class="card-body">';
-
-// Instructions
-echo '<div class="alert alert-info mb-4">';
-echo '<h6><i class="bi bi-info-circle"></i> Instructions:</h6>';
-echo '<ul class="mb-0">';
-echo '<li>Enter marks for each student (0-100)</li>';
-echo '<li>Grade will be calculated automatically</li>';
-echo '<li>Click "Save Marks" to submit for verification</li>';
-echo '<li>Status colors: <span class="badge bg-warning">Pending</span> <span class="badge bg-success">Verified</span> <span class="badge bg-danger">Rejected</span></li>';
-echo '</ul>';
-echo '</div>';
-
-// Marks form
-echo '<form id="marksForm" onsubmit="return saveAllMarks(event, ' . $class_id . ', ' . $subject_id . ', \'' . htmlspecialchars($subject_name) . '\')">';
-echo '<input type="hidden" name="class_id" value="' . $class_id . '">';
-echo '<input type="hidden" name="subject_id" value="' . $subject_id . '">';
-echo '<input type="hidden" name="teacher_id" value="' . $_SESSION['teacher_id'] . '">';
-
-echo '<div class="table-responsive">';
-echo '<table class="table table-bordered table-hover">';
-echo '<thead class="table-light">';
-echo '<tr>';
-echo '<th width="50">#</th>';
-echo '<th>Student ID</th>';
-echo '<th>Student Name</th>';
-echo '<th width="150">Marks (0-100)</th>';
-echo '<th width="100">Grade</th>';
-echo '<th width="120">Status</th>';
-echo '<th width="100">Actions</th>';
-echo '</tr>';
-echo '</thead>';
-echo '<tbody>';
-
-$counter = 1;
-while ($student = $students_result->fetch_assoc()) {
-    $existing = $existing_marks[$student['student_id']] ?? null;
-    
-    echo '<tr>';
-    echo '<td>' . $counter++ . '</td>';
-    echo '<td><strong>' . htmlspecialchars($student['student_id']) . '</strong></td>';
-    echo '<td>' . htmlspecialchars($student['student_name']) . '</td>';  // Changed from full_name to student_name
-    
-    // Marks input
-    echo '<td>';
-    echo '<div class="input-group">';
-    echo '<input type="number" 
-                 class="form-control marks-input" 
-                 name="marks[' . $student['student_id'] . ']" 
-                 value="' . ($existing['marks_obtained'] ?? '') . '" 
-                 min="0" max="100" 
-                 step="0.01"
-                 onchange="calculateGrade(this)" 
-                 required>';
-    echo '<span class="input-group-text">/100</span>';
-    echo '</div>';
-    echo '<div class="form-text"><small>Enter marks (0-100)</small></div>';
-    echo '</td>';
-    
-    // Grade display
-    echo '<td>';
-    if ($existing) {
-        echo '<span class="badge grade-badge grade-' . str_replace('+', 'plus', $existing['grade']) . '">' . $existing['grade'] . '</span>';
-    } else {
-        echo '<span class="badge bg-secondary" id="grade-' . $student['student_id'] . '">--</span>';
+// Check if ANY marks are verified
+$any_verified = false;
+foreach ($students_result->fetch_all(MYSQLI_ASSOC) as $student) {
+    if (isset($existing_marks[$student['student_id']]['verification_status']) && 
+        $existing_marks[$student['student_id']]['verification_status'] == 'verified') {
+        $any_verified = true;
+        break;
     }
-    echo '</td>';
-    
-    // Status
-    echo '<td>';
-    if ($existing) {
-        $status_class = '';
-        if ($existing['verification_status'] == 'verified') $status_class = 'bg-success';
-        elseif ($existing['verification_status'] == 'rejected') $status_class = 'bg-danger';
-        else $status_class = 'bg-warning';
-        
-        echo '<span class="badge ' . $status_class . '">';
-        echo ucfirst($existing['verification_status']);
-        echo '</span>';
-    } else {
-        echo '<span class="badge bg-light text-dark">Not Entered</span>';
-    }
-    echo '</td>';
-    
-    // Actions
-    echo '<td>';
-    if ($existing) {
-        echo '<button type="button" class="btn btn-sm btn-outline-info" 
-                onclick="viewStudentMarks(' . $student['student_id'] . ', ' . $subject_id . ')">
-                <i class="bi bi-eye"></i>
-              </button>';
-    }
-    echo '</td>';
-    
-    echo '</tr>';
 }
-
-echo '</tbody>';
-echo '</table>';
-echo '</div>';
-
-// Action buttons
-echo '<div class="mt-4 border-top pt-3">';
-echo '<div class="d-flex justify-content-between">';
-echo '<div>';
-echo '<button type="button" class="btn btn-secondary" 
-        onclick="loadClassSubjects(' . $class_id . ', \'' . htmlspecialchars($class_data['faculty'] ?? '') . '\', ' . ($class_data['semester'] ?? 0) . ')">
-        <i class="bi bi-x-circle"></i> Cancel
-      </button>';
-echo '</div>';
-echo '<div>';
-echo '<button type="button" class="btn btn-warning me-2" onclick="calculateAllGrades()">
-        <i class="bi bi-calculator"></i> Calculate All Grades
-      </button>';
-echo '<button type="submit" class="btn btn-success" id="saveBtn">
-        <i class="bi bi-check-circle"></i> Save All Marks
-      </button>';
-echo '</div>';
-echo '</div>';
-echo '</div>';
-
-echo '</form>';
-echo '</div>'; // card-body
-echo '</div>'; // card
-
-// Include JavaScript functions
+// Reset pointer to beginning for later use
+$students_result->data_seek(0);
 ?>
-<script>
-// Calculate grade based on marks
-// Calculate grade based on marks
-function calculateGrade(input) {
-    const marks = parseFloat(input.value);
-    if (isNaN(marks) || marks < 0 || marks > 100) return;
-    
-    const studentId = input.name.match(/\[(.*?)\]/)[1];
-    const grade = getGradeFromMarks(marks);
-    
-    // Update grade display
-    const gradeBadge = document.getElementById('grade-' + studentId);
-    if (gradeBadge) {
-        gradeBadge.textContent = grade;
-        
-        // Remove all grade classes and add the correct one
-        gradeBadge.className = 'badge grade-badge';
-        const gradeClass = 'grade-' + grade.replace('+', 'plus');
-        gradeBadge.classList.add(gradeClass);
-    }
-}
 
-// Get grade from marks
-function getGradeFromMarks(marks) {
-    if (marks >= 90) return 'A+';
-    if (marks >= 80) return 'A';
-    if (marks >= 70) return 'B+';
-    if (marks >= 60) return 'B';
-    if (marks >= 50) return 'C+';
-    if (marks >= 40) return 'C';
-    return 'F';
-}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Enter Marks</h5>
+            <small class="opacity-75">
+                <span id="save-counter">Ready to save</span>
+                • <?php echo htmlspecialchars($subject_name); ?>
+            </small>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-light me-2" onclick="ResultsMarks.viewInstructions()">
+                <i class="bi bi-info-circle"></i>
+            </button>
+            <button class="btn btn-sm btn-light" onclick="ResultsMarks.goBackToSubjects(); return false;">
+                <i class="bi bi-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
 
-// Calculate all grades
-function calculateAllGrades() {
-    document.querySelectorAll('.marks-input').forEach(input => {
-        if (input.value) calculateGrade(input);
-    });
-}
+    <div class="card-body">
+        <!-- Instructions -->
+        <div class="alert alert-info mb-4">
+            <h6><i class="bi bi-info-circle"></i> Instructions:</h6>
+            <ul class="mb-0">
+                <li>Enter marks for each student (0-100)</li>
+                <li>Grade will be calculated automatically</li>
+                <li>Click "Save Marks" to submit for verification</li>
+                <li>Status colors: <span class="badge bg-warning">Pending</span> <span class="badge bg-success">Verified</span> <span class="badge bg-danger">Rejected</span></li>
+            </ul>
+        </div>
 
-// View student marks details
-function viewStudentMarks(studentId, subjectId) {
-    alert('Student ID: ' + studentId + '\nSubject ID: ' + subjectId + '\n\nView feature coming soon...');
-}
-
-// Save all marks
-// Save all marks - ADD return false
-function saveAllMarks(event, classId, subjectId, subjectName) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const formData = new FormData(form);
-    const saveBtn = document.getElementById('saveBtn');
-    const originalText = saveBtn.innerHTML;
-    
-    // Disable button and show loading
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving...';
-    
-    // Validate all marks
-    let isValid = true;
-    document.querySelectorAll('.marks-input').forEach(input => {
-        const marks = parseFloat(input.value);
-        if (isNaN(marks) || marks < 0 || marks > 100) {
-            input.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            input.classList.remove('is-invalid');
-        }
-    });
-    
-    if (!isValid) {
-        alert('Please enter valid marks (0-100) for all students.');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
-        return false; // ADD THIS
-    }
-    
-    // Submit via AJAX
-    fetch('save_marks.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Marks saved successfully! Status: ' + data.status);
+        <!-- Marks Container -->
+        <div id="marksContainer">
+            <input type="hidden" id="currentClassId" value="<?php echo $class_id; ?>">
+            <input type="hidden" id="currentSubjectId" value="<?php echo $subject_id; ?>">
+            <input type="hidden" id="currentSubjectName" value="<?php echo htmlspecialchars($subject_name); ?>">
+            <input type="hidden" id="currentTeacherId" value="<?php echo $_SESSION['teacher_id']; ?>">
             
-            // Update status badges
-            document.querySelectorAll('[id^="grade-"]').forEach(badge => {
-                if (badge.textContent !== '--') {
-                    badge.parentElement.nextElementSibling.innerHTML = 
-                        '<span class="badge bg-warning">Pending</span>';
-                }
-            });
+            <!-- Navigation data -->
+            <input type="hidden" id="currentFaculty" value="<?php echo htmlspecialchars($class_data['faculty'] ?? ''); ?>">
+            <input type="hidden" id="currentSemester" value="<?php echo $class_data['semester'] ?? 0; ?>">
             
-            // Reload after delay
-            setTimeout(() => {
-                loadClassSubjects(classId, '<?php echo htmlspecialchars($class_data['faculty'] ?? ''); ?>', <?php echo $class_data['semester'] ?? 0; ?>);
-            }, 2000);
-        } else {
-            showAlert('danger', 'Error: ' + data.message);
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        showAlert('danger', 'Network error: ' + error.message);
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
-    });
-    
-    return false; // ADD THIS - prevents form submission
-}
+            <?php if ($any_verified): ?>
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle"></i> 
+                <strong>Warning:</strong> Some marks are already verified. Verified marks cannot be edited.
+            </div>
+            <?php endif; ?>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th width="150">Marks (0-100)</th>
+                            <th width="100">Grade</th>
+                            <th width="120">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $counter = 1;
+                        while ($student = $students_result->fetch_assoc()):
+                            $existing = $existing_marks[$student['student_id']] ?? null;
+                            $is_verified = ($existing && $existing['verification_status'] == 'verified');
+                        ?>
+                        <tr>
+                            <td><?php echo $counter++; ?></td>
+                            <td><strong><?php echo htmlspecialchars($student['student_id']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($student['student_name']); ?></td>
+                            
+                            <!-- Marks input -->
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           class="form-control marks-input <?php echo $is_verified ? 'bg-light' : ''; ?>" 
+                                           id="marks-<?php echo $student['student_id']; ?>"
+                                           value="<?php echo $existing['marks_obtained'] ?? ''; ?>" 
+                                           min="0" max="100" 
+                                           step="0.5"
+                                           data-student-id="<?php echo $student['student_id']; ?>"
+                                           <?php echo $is_verified ? 'readonly' : ''; ?>
+                                           <?php echo $is_verified ? 'title="Verified marks cannot be edited"' : ''; ?>>
+                                    <span class="input-group-text">/100</span>
+                                </div>
+                                <div class="form-text"><small>Enter marks (0-100)</small></div>
+                            </td>
+                            
+                            <!-- Grade display -->
+                            <td>
+                                <?php if ($existing): ?>
+                                    <span class="badge grade-badge grade-<?php echo str_replace('+', 'plus', $existing['grade']); ?>">
+                                        <?php echo $existing['grade']; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary" id="grade-<?php echo $student['student_id']; ?>">
+                                        <?php echo $existing['grade'] ?? '--'; ?>
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            
+                            <!-- Status -->
+                            <td>
+                                <?php if ($existing): ?>
+                                    <?php
+                                    $status_class = '';
+                                    if ($existing['verification_status'] == 'verified') $status_class = 'bg-success';
+                                    elseif ($existing['verification_status'] == 'rejected') $status_class = 'bg-danger';
+                                    else $status_class = 'bg-warning';
+                                    ?>
+                                    <span class="badge <?php echo $status_class; ?>">
+                                        <?php echo ucfirst($existing['verification_status']); ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-dark">Not Entered</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-// Show alert
-function showAlert(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const cardBody = document.querySelector('.card-body');
-    if (cardBody) {
-        cardBody.insertBefore(alertDiv, cardBody.firstChild);
-    }
-}
-</script>
+        <!-- Action buttons -->
+        <div class="mt-4 border-top pt-3">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <!-- Cancel button -->
+                    <button type="button" class="btn btn-secondary" 
+                            onclick="ResultsSystem.loadClassSubjects(<?php echo $class_id; ?>, '<?php echo htmlspecialchars($class_data['faculty'] ?? ''); ?>', <?php echo $class_data['semester'] ?? 0; ?>); return false;">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                </div>
+                <div>
+                    <?php if ($any_verified): ?>
+                        <!-- Disabled save button if any marks are verified -->
+                        <button type="button" class="btn btn-secondary" disabled>
+                            <i class="bi bi-lock"></i> Some Marks Verified (Read Only)
+                        </button>
+                        <div class="form-text text-danger mt-1">
+                            <small><i class="bi bi-info-circle"></i> Cannot edit because some marks are verified.</small>
+                        </div>
+                    <?php else: ?>
+                        <!-- Save button -->
+                        <button type="button" class="btn btn-success" id="saveBtn" onclick="ResultsMarks.saveAllMarks(); return false;">
+                            <i class="bi bi-check-circle"></i> Save All Marks
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-// Add this CSS right before the closing </script> tag in get_students_for_marks.php
-?>
+<!-- CSS for grades -->
 <style>
 .grade-badge {
     font-size: 0.85rem;
@@ -349,4 +250,48 @@ function showAlert(type, message) {
 .grade-Cplus { background-color: #6f42c1; color: white; }
 .grade-C { background-color: #e83e8c; color: white; }
 .grade-F { background-color: #dc3545; color: white; }
+
+/* Toast animations */
+.toast {
+    animation: slideInRight 0.3s ease-out;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.fade-out {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Status badges animation */
+.badge.bg-warning {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
 </style>

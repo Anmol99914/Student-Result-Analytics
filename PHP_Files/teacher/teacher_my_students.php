@@ -4,6 +4,10 @@ session_start();
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+// Add at the VERY TOP of each PHP file
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+header("Pragma: no-cache");
 
 // Teacher login check
 if(!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != true){

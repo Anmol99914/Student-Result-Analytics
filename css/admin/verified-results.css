@@ -1,0 +1,126 @@
+/* verified-results.css - Clean CSS for verified results page */
+
+/* Grade badges */
+.grade-A { 
+    background-color: #d4edda !important; 
+    color: #155724 !important; 
+    border: 1px solid #c3e6cb;
+}
+.grade-B { 
+    background-color: #fff3cd !important; 
+    color: #856404 !important; 
+    border: 1px solid #ffeaa7;
+}
+.grade-C { 
+    background-color: #f8d7da !important; 
+    color: #721c24 !important; 
+    border: 1px solid #f5c6cb;
+}
+.grade-D { 
+    background-color: #e2e3e5 !important; 
+    color: #383d41 !important; 
+    border: 1px solid #d6d8db;
+}
+
+/* Student ID badge */
+.student-id-badge {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    padding: 0.25em 0.5em;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* Table row hover effect */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+/* Verified status badge */
+.verified-status {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 0.25em 0.75em;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+/* Card improvements */
+.verified-stats-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.verified-stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Filter form improvements */
+#verified-filter-form .form-select {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#verified-filter-form .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Pagination styling */
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 3px;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* Empty state styling */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    opacity: 0.3;
+    margin-bottom: 1.5rem;
+    color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .verified-stats-card {
+        margin-bottom: 1rem;
+    }
+    
+    #verified-filter-form .col-md-5,
+    #verified-filter-form .col-md-2 {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9em;
+    }
+}

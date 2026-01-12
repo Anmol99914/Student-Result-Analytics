@@ -199,30 +199,20 @@ while ($subject = $result->fetch_assoc()) {
     echo '</div>'; // end subject info
     echo '</div>'; // end card-body
     
-    // Action Buttons
+    // Single Action Button
     echo '<div class="card-footer bg-transparent">';
     echo '<div class="d-grid gap-2">';
-    
-    if ($marked_count > 0) {
-        echo '<button class="btn btn-warning btn-sm view-marks-btn" 
-                data-class-id="' . $class_id . '"
-                data-subject-id="' . $subject['subject_id'] . '"
-                data-subject-name="' . htmlspecialchars($subject['subject_name']) . '"
-                data-faculty="' . htmlspecialchars($faculty_code) . '"
-                data-semester="' . $semester . '">
-                <i class="bi bi-eye"></i> View/Edit (' . $marked_count . ')
-              </button>';
-    }
-    
-    echo '<button class="btn btn-primary btn-sm enter-marks-btn" 
+
+    echo '<button class="btn ' . ($marked_count > 0 ? 'btn-warning' : 'btn-primary') . ' btn-sm enter-marks-btn" 
             data-class-id="' . $class_id . '"
             data-subject-id="' . $subject['subject_id'] . '"
             data-subject-name="' . htmlspecialchars($subject['subject_name']) . '"
-            data-faculty="' . htmlspecialchars($faculty_code) . '"
+            data-faculty="' . htmlspecialchars($faculty_display_name) . '"
             data-semester="' . $semester . '">
-            <i class="bi bi-pencil-square"></i> ' . ($marked_count > 0 ? 'Enter More' : 'Enter Marks') . '
-          </button>';
-    
+            <i class="bi ' . ($marked_count > 0 ? 'bi-pencil' : 'bi-pencil-square') . '"></i>
+            ' . ($marked_count > 0 ? 'View/Edit Marks (' . $marked_count . ')' : 'Enter Marks') . '
+        </button>';
+
     echo '</div>'; // end grid
     echo '</div>'; // end card-footer
     

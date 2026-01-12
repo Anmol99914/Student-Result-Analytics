@@ -1,7 +1,7 @@
 // File: js/admin/admin-main.js
 // Purpose: Core navigation and utility functions for admin panel
 
-// ===== CORE FUNCTIONS =====
+// ===== CORE FUNCTIONS =====:)
 
 // Global function to load any page via AJAX
 function loadPage(url) {
@@ -104,28 +104,42 @@ function executeScriptsInContent(container) {
             const newScript = document.createElement('script');
             newScript.src = script.src;
             newScript.async = false;
+            document.head.appendChild(newScript);
+
             
             // Copy all attributes
-            Array.from(script.attributes).forEach(attr => {
-                newScript.setAttribute(attr.name, attr.value);
-            });
+            // Array.from(script.attributes).forEach(attr => {
+            //     newScript.setAttribute(attr.name, attr.value);
+            // });
             
-            // Replace old script with new one (this triggers execution)
-            script.parentNode.replaceChild(newScript, script);
+            // // Replace old script with new one (this triggers execution)
+            // script.parentNode.replaceChild(newScript, script);
             
         } else {
             // If it's inline script
             try {
+                console.log('Executing inline script...');
+                // Use eval() - this is the key fix!
+                eval(script.textContent);
+                console.log('✅ Inline script executed successfully');
+            } catch (error) {
+                console.error('❌ Error executing script:', error);
+                // Fallback: create script element
                 const newScript = document.createElement('script');
                 newScript.textContent = script.textContent;
                 document.body.appendChild(newScript);
-                document.body.removeChild(newScript);
-                console.log('Inline script executed');
-            } catch (error) {
-                console.error('Error executing inline script:', error);
+
+                // Remove after execution
+                setTimeout(() => {
+                    if (newScript.parentNode) {
+                        document.body.removeChild(newScript);
+                    }
+                }, 100);            
             }
         }
     });
+    // Re-initialize Bootstrap for any new components
+    setTimeout(initBootstrapComponents, 100);
 }
 
 // Helper function to load external scripts
@@ -260,9 +274,319 @@ function loadSubjectManagement() {
     loadPage('pages/subject_management.php');
 }
 
+// ===== RESULTS VERIFICATION SYSTEM =====
+
+// Load Results Verification
+function loadResultsVerification() {
+    console.log('Loading Results Verification...');
+    loadPage('Results/pending_results.php');
+    
+    // Update pending count after a delay
+    setTimeout(() => {
+        updatePendingCount();
+    }, 1000);
+}
+
+// Pending count function
+function updatePendingCount() {
+    fetch('Results/get_pending_count.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById('pending-count');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.className = `badge ${data.count > 0 ? 'bg-danger' : 'bg-success'}`;
+                }
+            }
+        })
+        .catch(error => console.warn('Pending count error:', error));
+}
+
+// just checking
+// ===== VERIFICATION FUNCTIONS =====
+// These will be available globally
+
+function viewResultDetails(resultId) {
+    console.log('📋 Viewing result:', resultId);
+    
+    fetch('Results/get_result_details.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'result_id=' + resultId
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        
+        // Show modal
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+        
+        // Remove modal after hiding
+        modal.addEventListener('hidden.bs.modal', function() {
+            modal.remove();
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading details: ' + error.message);
+    });
+}
+
+function verifyResult(resultId) {
+    console.log('✅ Verifying result:', resultId);
+    
+    if (confirm('Verify this result? Once verified, teacher cannot edit it.')) {
+        // Find and disable the button
+        const btn = document.querySelector(`button[onclick*="verifyResult(${resultId})"]`);
+        if (btn) {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            btn.disabled = true;
+        }
+        
+        fetch('Results/update_verification.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'result_id=' + resultId + '&status=verified'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Restore button
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-check"></i>';
+                btn.disabled = false;
+            }
+            
+            if (data.success) {
+                alert('✅ Result verified successfully!');
+                
+                // Remove the row
+                const row = document.querySelector(`tr[data-result-id="${resultId}"]`);
+                if (row) {
+                    // Animate removal
+                    row.style.transition = 'all 0.3s';
+                    row.style.opacity = '0';
+                    row.style.height = '0';
+                    row.style.padding = '0';
+                    row.style.margin = '0';
+                    row.style.overflow = 'hidden';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // Update pending count
+                        updatePendingCount();
+                        
+                        // Check if table is empty
+                        const tbody = document.querySelector('#pending-results-table tbody');
+                        if (tbody && tbody.children.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <i class="bi bi-check-circle display-4 text-success"></i>
+                                        <h5 class="mt-3">All pending results verified!</h5>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    }, 300);
+                }
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-check"></i>';
+                btn.disabled = false;
+            }
+            alert('Failed to verify result');
+        });
+    }
+}
+
+function rejectResult(resultId) {
+    console.log('❌ Rejecting result:', resultId);
+    
+    const reason = prompt('Enter rejection reason (optional):');
+    if (reason !== null) {
+        // Find and disable the button
+        const btn = document.querySelector(`button[onclick*="rejectResult(${resultId})"]`);
+        if (btn) {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            btn.disabled = true;
+        }
+        
+        fetch('Results/update_verification.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'result_id=' + resultId + '&status=rejected&reason=' + encodeURIComponent(reason)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Restore button
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-x"></i>';
+                btn.disabled = false;
+            }
+            
+            if (data.success) {
+                alert('✅ Result rejected!');
+                
+                // Remove the row
+                const row = document.querySelector(`tr[data-result-id="${resultId}"]`);
+                if (row) row.remove();
+                
+                // Update pending count
+                updatePendingCount();
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (btn) {
+                btn.innerHTML = '<i class="bi bi-x"></i>';
+                btn.disabled = false;
+            }
+            alert('Failed to reject result');
+        });
+    }
+}
+
+// Make them global
+window.viewResultDetails = viewResultDetails;
+window.verifyResult = verifyResult;
+window.rejectResult = rejectResult;
+
+console.log('✅ Verification functions loaded in admin-main.js');
+// Load verified results page via AJAX
+function loadVerifiedResults() {
+    console.log('Loading verified results...');
+    loadPage('Results/view_verified.php');
+}
+
+// Make globally available
+window.loadVerifiedResults = loadVerifiedResults;
+
+// Load rejected results page via AJAX
+function loadRejectedResults() {
+    console.log('Loading rejected results...');
+    loadPage('Results/view_rejected.php');
+}
+
+// Make functions globally available
+window.loadRejectedResults = loadRejectedResults;
+// just checking
+// function viewResultDetails(resultId) {
+//     console.log('📋 Viewing result:', resultId);
+    
+//     fetch('Results/get_result_details.php', {
+//         method: 'POST',
+//         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+//         body: 'result_id=' + resultId
+//     })
+//     .then(response => response.text())
+//     .then(html => {
+//         // Create modal
+//         const modal = document.createElement('div');
+//         modal.className = 'modal fade';
+//         modal.innerHTML = html;
+//         document.body.appendChild(modal);
+        
+//         // Show modal
+//         const modalInstance = new bootstrap.Modal(modal);
+//         modalInstance.show();
+        
+//         // Remove modal after hiding
+//         modal.addEventListener('hidden.bs.modal', function() {
+//             modal.remove();
+//         });
+//     })
+//     .catch(error => {
+//         console.error('Error:', error);
+//         alert('Error loading details: ' + error.message);
+//     });
+// }
+
+// Verify result
+// function verifyResult(resultId) {
+//     console.log('✅ Verifying result:', resultId);
+    
+//     if (confirm('Verify this result? Once verified, teacher cannot edit it.')) {
+//         updateVerificationStatus(resultId, 'verified');
+//     }
+// }
+
+// Reject result
+// function rejectResult(resultId) {
+//     console.log('❌ Rejecting result:', resultId);
+    
+//     const reason = prompt('Enter rejection reason (optional):');
+//     if (reason !== null) {
+//         updateVerificationStatus(resultId, 'rejected', reason);
+//     }
+// }
+
+// Update verification status
+// function updateVerificationStatus(resultId, status, reason = '') {
+//     console.log('🔄 Updating result', resultId, 'to', status);
+    
+//     fetch('Results/update_verification.php', {
+//         method: 'POST',
+//         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+//         body: 'result_id=' + resultId + '&status=' + status + '&reason=' + encodeURIComponent(reason)
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         if (data.success) {
+//             alert('Result ' + status + ' successfully!');
+//             // Refresh the page
+//             loadResultsVerification();
+//         } else {
+//             alert('Error: ' + data.message);
+//         }
+//     })
+//     .catch(error => {
+//         console.error('Error:', error);
+//         alert('Failed to update verification status');
+//     });
+// }
+
+// Filter pending results
+// function filterPendingResults() {
+//     const faculty = document.getElementById('filter-faculty').value;
+//     const semester = document.getElementById('filter-semester').value;
+    
+//     // Reload with filters
+//     loadResultsVerification();
+// }
+
+// ===== MAKE FUNCTIONS GLOBALLY AVAILABLE =====
+// These lines make the verification functions available globally
+// window.viewResultDetails = viewResultDetails;
+// window.verifyResult = verifyResult;
+// window.rejectResult = rejectResult;
+// window.updateVerificationStatus = updateVerificationStatus;
+// window.filterPendingResults = filterPendingResults;
+
+// console.log('✅ Results verification system ready');
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin panel initialized');
+    
+    // Update pending count every 5 minutes
+    updatePendingCount();
+    setInterval(updatePendingCount, 300000);
     
     // Setup sidebar click events
     document.querySelectorAll('.admin-sidebar .nav-link').forEach(link => {
@@ -285,10 +609,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     loadClassManagement();
                 } else if (onclick.includes('loadStudentManagement')) { 
                     loadStudentManagement();
-                }else if (onclick.includes('loadDashboard')) {
+                } else if (onclick.includes('loadDashboard')) {
                     loadDashboard();
                 } else if (onclick.includes('loadSubjectManagement')) {
                     loadSubjectManagement();
+                } else if (onclick.includes('loadResultsVerification')) {
+                    loadResultsVerification();
                 }
             }
         });
@@ -315,4 +641,50 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Unhandled promise rejection:', e.reason);
         showAlert('danger', 'Async Error: ' + e.reason.message);
     });
+});
+
+// Handle verification button clicks
+document.addEventListener('click', function(event) {
+    // Check if clicked on verification buttons
+    if (event.target.closest('.verification-actions')) {
+        const btn = event.target.closest('button');
+        if (!btn) return;
+        
+        // Get result ID
+        let resultId = btn.dataset.resultId;
+        if (!resultId) {
+            // Try to parse from onclick
+            const onclick = btn.getAttribute('onclick') || '';
+            const match = onclick.match(/\((\d+)\)/);
+            if (match) resultId = match[1];
+        }
+        
+        if (!resultId) return;
+        
+        // Prevent default and stop propagation
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Call appropriate function
+        if (btn.classList.contains('btn-view')) {
+            console.log('View clicked:', resultId);
+            if (typeof viewResultDetails === 'function') {
+                viewResultDetails(resultId);
+            }
+        } 
+        else if (btn.classList.contains('btn-verify')) {
+            console.log('Verify clicked:', resultId);
+            if (typeof verifyResult === 'function') {
+                verifyResult(resultId);
+            }
+        }
+        else if (btn.classList.contains('btn-reject')) {
+            console.log('Reject clicked:', resultId);
+            if (typeof rejectResult === 'function') {
+                rejectResult(resultId);
+            }
+        }
+        
+        return false;
+    }
 });
