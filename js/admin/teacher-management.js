@@ -6,7 +6,8 @@
     
     // Configuration
     const CONFIG = {
-        apiUrl: '../admin/api/get_teachers.php',
+        // apiUrl: '../admin/api/get_teachers.php',
+        apiUrl: '/Student_Result_Analytics/PHP_Files/admin/api/get_teachers.php',
         containerId: 'teachers-container'
     };
     
@@ -274,10 +275,11 @@
                                         onclick="window.teacherManager.toggleStatus(${teacher.teacher_id}, '${teacher.status}')">
                                     <i class="bi bi-power"></i>
                                 </button>
-                                <a href="assign_teachers.php?teacher_id=${teacher.teacher_id}" 
-                                   class="btn btn-outline-success" title="Assign Subjects">
-                                    <i class="bi bi-book"></i>
-                                </a>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        title="Assign Subjects"
+                                        onclick="window.teacherManager.openAssignModal(${teacher.teacher_id}, '${teacher.name}')">
+                                    <i class="bi bi-book"></i> Assign
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -407,7 +409,7 @@
             submitBtn.disabled = true;
             
             try {
-                const response = await fetch('../admin/api/add_teacher.php', {
+                const response = await fetch('../../PHP_Files/admin/api/add_teacher.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -438,7 +440,7 @@
             
             try {
                 // Fetch teacher details
-                const response = await fetch(`../admin/api/get_teacher.php?teacher_id=${teacherId}`);
+                const response = await fetch(`../../PHP_Files/admin/api/get_teacher.php?teacher_id=${teacherId}`);
                 const data = await response.json();
                 
                 if (!data.success) {
@@ -540,7 +542,7 @@
             submitBtn.disabled = true;
             
             try {
-                const response = await fetch('../admin/api/update_teacher.php', {
+                const response = await fetch('../../PHP_Files/admin/api/update_teacher.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -587,20 +589,10 @@
         },
         
         showTeacherDetails: function(teacher, stats) {
-            // Store teacher data globally for updates
-            window.currentTeacherInModal = teacher;
-            
             const createdDate = teacher.created_at 
-                ? new Date(teacher.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })
+                ? new Date(teacher.created_at).toLocaleDateString()
                 : 'N/A';
             
-            // Create modal HTML - REMOVED duplicate status line
             const modalHTML = `
                 <div class="modal fade" id="viewTeacherModal" tabindex="-1">
                     <div class="modal-dialog modal-lg">
@@ -614,7 +606,7 @@
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col-md-3 text-center">
-                                        <div class="teacher-avatar-large bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
                                              style="width: 100px; height: 100px; font-size: 36px;">
                                             ${teacher.name.charAt(0).toUpperCase()}
                                         </div>
@@ -632,7 +624,6 @@
                                                     <div class="card-body">
                                                         <h6 class="card-title text-muted">Contact Information</h6>
                                                         <p class="mb-1"><i class="bi bi-envelope me-2"></i> ${teacher.email}</p>
-                                                        <p class="mb-0"><i class="bi bi-person me-2"></i> Teacher ID: #${teacher.teacher_id}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -642,7 +633,7 @@
                                                     <div class="card-body">
                                                         <h6 class="card-title text-muted">Account Information</h6>
                                                         <p class="mb-0"><i class="bi bi-calendar me-2"></i> Created: ${createdDate}</p>
-                                                        <!-- REMOVED: Status line here since it's shown in badge above -->
+                                                        <p class="mb-0"><i class="bi bi-tag me-2"></i> ID: #${teacher.teacher_id}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -657,7 +648,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
                                             <div class="col-md-6">
                                                 <div class="card">
                                                     <div class="card-body text-center">
@@ -668,21 +658,13 @@
                                             </div>
                                         </div>
                                         
-                                        <div class="alert alert-warning">
-                                            <i class="bi bi-lightbulb"></i>
-                                            <strong>Quick Actions:</strong>
-                                            <div class="mt-2">
-                                                <button class="btn btn-sm btn-primary me-2" onclick="window.teacherManager.editTeacher(${teacher.teacher_id})">
-                                                    <i class="bi bi-pencil"></i> Edit Teacher
-                                                </button>
-                                                <button class="btn btn-sm btn-warning me-2" onclick="window.teacherManager.toggleStatus(${teacher.teacher_id}, '${teacher.status}', true)">
-                                                    <i class="bi bi-power"></i> ${teacher.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                </button>
-                                                <a href="assign_teachers.php?teacher_id=${teacher.teacher_id}" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-book"></i> Manage Assignments
-                                                </a>
-                                            </div>
-                                        </div>
+                                        <!-- REMOVED QUICK ACTIONS SECTION -->
+                                        <hr>
+                                        <p class="text-muted mb-0">
+                                            <i class="bi bi-info-circle"></i> 
+                                            Teacher ID: #${teacher.teacher_id} | 
+                                            Created: ${createdDate}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -694,6 +676,10 @@
                 </div>
             `;
             
+            // Remove existing modal if any
+            const existingModal = document.getElementById('viewTeacherModal');
+            if (existingModal) existingModal.remove();
+            
             // Add modal to page
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             
@@ -701,9 +687,8 @@
             const modal = new bootstrap.Modal(document.getElementById('viewTeacherModal'));
             modal.show();
             
-            // Remove modal when hidden and clean up
+            // Clean up on hide
             document.getElementById('viewTeacherModal').addEventListener('hidden.bs.modal', function() {
-                delete window.currentTeacherInModal;
                 this.remove();
             });
         },
@@ -721,7 +706,7 @@
                 formData.append('teacher_id', teacherId);
                 formData.append('status', newStatus);
                 
-                const response = await fetch('../admin/api/update_teacher_status.php', {
+                const response = await fetch('../../PHP_Files/admin/api/update_teacher_status.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -836,7 +821,102 @@
                 `;
                 document.head.appendChild(style);
             }
-        }
+        },
+
+// Open Assign Subjects Modal
+openAssignModal: function(teacherId, teacherName) {
+    console.log('Opening assign modal for teacher:', teacherId);
+    
+    // Set modal title
+    const modalTitle = document.querySelector('#assignSubjectsModal .modal-title');
+    if (modalTitle) {
+        modalTitle.innerHTML = `<i class="bi bi-book"></i> Assign Subjects - ${teacherName}`;
+    }
+    
+    // Load content
+    const modalBody = document.getElementById('assignSubjectsModalBody');
+    modalBody.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Loading subjects...</p>
+        </div>
+    `;
+    
+    // Fetch the assign form
+    fetch(`assign_teachers_modal.php?teacher_id=${teacherId}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+            
+            // === FIX: Attach save button event listener ===
+            const saveBtn = document.getElementById('saveAssignmentsBtn');
+            if (saveBtn) {
+                // Remove any existing listeners
+                const newSaveBtn = saveBtn.cloneNode(true);
+                saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+                
+                // Add new listener
+                newSaveBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    saveAssignmentsFromModal(teacherId);
+                });
+            }
+            
+            // Attach class select event listener
+            const classSelect = document.getElementById('classSelect');
+            if (classSelect) {
+                classSelect.addEventListener('change', function() {
+                    const classId = this.value;
+                    if (classId) {
+                        loadSubjectsDirectly(teacherId, classId);
+                    } else {
+                        document.getElementById('subjectListContainer').innerHTML = `
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-arrow-up-circle" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Select a class to view subjects</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Error loading assign form: ${error.message}
+                </div>
+            `;
+        });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('assignSubjectsModal'));
+    modal.show();
+},
+
+// Initialize assign form
+initAssignForm: function(teacherId) {
+    // Class select change handler
+    const classSelect = document.getElementById('classSelect');
+    if (classSelect) {
+        classSelect.addEventListener('change', function() {
+            const classId = this.value;
+            if (classId) {
+                loadSubjectsForClass(teacherId, classId);
+            } else {
+                document.getElementById('subjectListContainer').innerHTML = '';
+            }
+        });
+    }
+    
+    // Save button handler
+    const saveBtn = document.getElementById('saveAssignmentsBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            saveAssignments(teacherId);
+        });
+    }
+}
     };
     
     // Export to window
@@ -844,9 +924,229 @@
     
     console.log('TeacherManager module loaded');
     
-    // Auto-initialize if container exists
-    if (document.getElementById('teachers-container')) {
-        console.log('Auto-initializing...');
-        setTimeout(() => TeacherManager.init(), 100);
+    // Auto-initialize with multiple attempts
+if (document.getElementById('teachers-container')) {
+    console.log('Teachers container found, scheduling initialization...');
+    
+    function tryInit() {
+        if (window.teacherManager) {
+            console.log('Auto-initializing teacherManager...');
+            window.teacherManager.init();
+            return true;
+        }
+        return false;
     }
+    
+    // Try multiple times
+    tryInit();
+    setTimeout(tryInit, 100);
+    setTimeout(tryInit, 300);
+    setTimeout(tryInit, 500);
+    setTimeout(tryInit, 1000);
+}
 })();
+
+// ===== DIRECT SUBJECT LOADING FUNCTION =====
+function loadSubjectsDirectly(teacherId, classId) {
+    console.log('Loading subjects for teacher:', teacherId, 'class:', classId);
+    
+    const container = document.getElementById('subjectListContainer');
+    if (!container) return;
+    
+    // Get class info from select
+    const classSelect = document.getElementById('classSelect');
+    const selectedOption = classSelect?.options[classSelect.selectedIndex];
+    const faculty = selectedOption?.dataset.faculty || '';
+    const semester = selectedOption?.dataset.semester || '';
+    
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Loading subjects for ${faculty} - Semester ${semester}...</p>
+        </div>
+    `;
+    
+    // Fetch subjects and assignments
+    Promise.all([
+        fetch(`api/get_class_subjects.php?class_id=${classId}`),
+        fetch(`api/get_teacher_assignments.php?teacher_id=${teacherId}&class_id=${classId}`)
+    ])
+    .then(async ([subjectsRes, assignmentsRes]) => {
+        if (!subjectsRes.ok) throw new Error('Failed to load subjects');
+        if (!assignmentsRes.ok) throw new Error('Failed to load assignments');
+        
+        const subjects = await subjectsRes.json();
+        const assignments = await assignmentsRes.json();
+        
+        if (subjects.success) {
+            displaySubjectsInModal(subjects.data, assignments.assigned_ids || [], assignments.duplicates || {});
+            document.getElementById('saveAssignmentsBtn').disabled = false;
+        } else {
+            throw new Error(subjects.error || 'Failed to load subjects');
+        }
+    })
+    .catch(error => {
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                Error: ${error.message}
+                <button class="btn btn-sm btn-danger ms-2" onclick="window.location.reload()">Retry</button>
+            </div>
+        `;
+    });
+}
+
+// ===== SAVE ASSIGNMENTS FROM MODAL =====
+function saveAssignmentsFromModal(teacherId) {
+    console.log('Saving assignments for teacher:', teacherId);
+    
+    const classSelect = document.getElementById('classSelect');
+    const classId = classSelect?.value;
+    
+    if (!classId) {
+        alert('❌ Please select a class');
+        return;
+    }
+    
+    // Get selected subjects
+    const checkboxes = document.querySelectorAll('.subject-checkbox:checked:not(:disabled)');
+    const subjectIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    // Confirm if no subjects selected
+    if (subjectIds.length === 0) {
+        if (!confirm('No subjects selected. This will remove all assignments for this class. Continue?')) {
+            return;
+        }
+    }
+    
+    // Show loading state
+    const saveBtn = document.getElementById('saveAssignmentsBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+    saveBtn.disabled = true;
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('teacher_id', teacherId);
+    formData.append('class_id', classId);
+    subjectIds.forEach(id => formData.append('subject_ids[]', id));
+    
+    // Send request
+    fetch('api/assign_teacher_subjects.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success message
+            alert('✅ Subjects assigned successfully!');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignSubjectsModal'));
+            if (modal) modal.hide();
+            
+            // Refresh teacher list to show updated assignments
+            if (window.teacherManager && typeof window.teacherManager.loadTeachers === 'function') {
+                window.teacherManager.loadTeachers();
+            }
+        } else {
+            throw new Error(data.error || 'Failed to save assignments');
+        }
+    })
+    .catch(error => {
+        alert('❌ Error: ' + error.message);
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// Make it globally available
+window.saveAssignmentsFromModal = saveAssignmentsFromModal;
+
+function displaySubjectsInModal(subjects, assignedIds = [], duplicates = {}) {
+    const container = document.getElementById('subjectListContainer');
+    
+    if (!subjects || subjects.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                No subjects found for this class.
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="fw-bold">Select Subjects:</span>
+            <span id="selectedCount" class="badge bg-primary">0 selected</span>
+        </div>
+        <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
+    `;
+    
+    subjects.forEach(subject => {
+        const isAssigned = assignedIds.includes(subject.subject_id);
+        const duplicate = duplicates[subject.subject_id];
+        
+        html += `
+            <div class="form-check py-1">
+                <input class="form-check-input subject-checkbox" 
+                       type="checkbox" 
+                       value="${subject.subject_id}"
+                       id="sub_${subject.subject_id}"
+                       ${isAssigned ? 'checked' : ''}
+                       ${duplicate ? 'disabled' : ''}
+                       onchange="updateSubjectCount()">
+                <label class="form-check-label" for="sub_${subject.subject_id}">
+                    <strong>${escapeHtml(subject.subject_name)}</strong>
+                    ${subject.subject_code ? `<small class="text-muted">(${subject.subject_code})</small>` : ''}
+                    ${subject.credits ? `<span class="badge bg-secondary ms-1">${subject.credits} cr</span>` : ''}
+                    ${isAssigned ? '<span class="badge bg-success ms-2">Assigned</span>' : ''}
+                    ${duplicate ? `<span class="badge bg-warning ms-2">Assigned to ${escapeHtml(duplicate.teacher_name)}</span>` : ''}
+                </label>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    updateSubjectCount();
+    
+    // Ensure checkboxes update count
+    document.querySelectorAll('.subject-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSubjectCount);
+    });
+}
+
+// Global helper functions
+window.selectAllSubjects = function() {
+    document.querySelectorAll('.subject-checkbox:not(:disabled)').forEach(cb => cb.checked = true);
+    updateSubjectCount();
+};
+
+window.deselectAllSubjects = function() {
+    document.querySelectorAll('.subject-checkbox:not(:disabled)').forEach(cb => cb.checked = false);
+    updateSubjectCount();
+};
+
+window.updateSubjectCount = function() {
+    const count = document.querySelectorAll('.subject-checkbox:checked:not(:disabled)').length;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.textContent = count + ' selected';
+};
+
+window.escapeHtml = function(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
+// Make functions globally available
+window.loadSubjectsDirectly = loadSubjectsDirectly;
+window.displaySubjectsInModal = displaySubjectsInModal;
+

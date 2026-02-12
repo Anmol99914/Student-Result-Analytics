@@ -1,492 +1,303 @@
-// assign-teachers.js
-// JavaScript for teacher assignment page
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Get elements
-    const facultySelect = document.getElementById('facultySelect');
-    const semesterSelect = document.getElementById('semesterSelect');
-    const subjectSelect = document.getElementById('subjectSelect');
-    const teachersTable = document.getElementById('teachersTable');
-    const assignmentsList = document.getElementById('assignmentsList');
-    const saveBtn = document.getElementById('saveBtn');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    
-    let currentClassId = 0;
-    let currentFaculty = '';
-    let currentSemester = 0;
-    let currentSubjectId = 0;
-    let selectedTeachers = new Set(); // Store selected teacher IDs
-    
-    // Initialize
-    init();
-    
-    function init() {
-        // Get class ID from URL or data attribute
-        const urlParams = new URLSearchParams(window.location.search);
-        currentClassId = urlParams.get('class_id') || document.body.dataset.classId || 0;
-        currentFaculty = document.body.dataset.faculty || 'BCA';
-        currentSemester = document.body.dataset.semester || 1;
+// assign-teachers.js - Pure JavaScript, no inline scripts
+class AssignTeacherSubjects {
+    constructor() {
+        this.teacherId = document.getElementById('teacherId')?.value;
+        this.teacherName = document.getElementById('teacherName')?.value;
+        this.currentClassId = '';
+        this.currentFaculty = '';
+        this.currentSemester = '';
+        this.assignedSubjects = [];
         
-        // Set initial values
-        if(facultySelect) facultySelect.value = currentFaculty;
-        if(semesterSelect) semesterSelect.value = currentSemester;
-        
-        // Load initial data
-        loadSubjects();
-        loadCurrentAssignments();
-        
-        // Setup event listeners
-        setupEventListeners();
+        this.init();
     }
     
-    function setupEventListeners() {
-        // Faculty/Semester change
-        if(facultySelect) {
-            facultySelect.addEventListener('change', function() {
-                currentFaculty = this.value;
-                loadSubjects();
-            });
+    init() {
+        console.log('AssignTeacherSubjects initialized');
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        // Class selection change
+        const classSelect = document.getElementById('classSelect');
+        if (classSelect) {
+            classSelect.addEventListener('change', (e) => this.handleClassChange(e));
         }
         
-        if(semesterSelect) {
-            semesterSelect.addEventListener('change', function() {
-                currentSemester = parseInt(this.value);
-                loadSubjects();
-            });
-        }
-        
-        // Subject selection
-        if(subjectSelect) {
-            subjectSelect.addEventListener('change', function() {
-                currentSubjectId = parseInt(this.value);
-                if(currentSubjectId > 0) {
-                    loadTeachers();
-                } else {
-                    clearTeachersTable();
-                }
-            });
-        }
-        
-        // Save button
-        if(saveBtn) {
-            saveBtn.addEventListener('click', saveAssignment);
-        }
-        
-        // Select all checkbox
-        const selectAllCheckbox = document.getElementById('selectAllTeachers');
-        if(selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.teacher-checkbox');
-                checkboxes.forEach(cb => {
-                    cb.checked = this.checked;
-                    if(this.checked) {
-                        selectedTeachers.add(parseInt(cb.value));
-                    } else {
-                        selectedTeachers.delete(parseInt(cb.value));
-                    }
-                });
-                updateSelectedCount();
-            });
+        // Save button click
+        const saveBtn = document.getElementById('saveAssignmentsBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => this.saveAssignments(e));
         }
     }
     
-    function loadSubjects() {
-        if(!subjectSelect) return;
+    handleClassChange(event) {
+        const select = event.target;
+        const classId = select.value;
         
-        showLoading(true);
-        subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+        if (!classId) {
+            document.getElementById('subjectListContainer').innerHTML = '';
+            document.getElementById('saveAssignmentsBtn').disabled = true;
+            return;
+        }
         
-        fetch(`../../PHP_Files/admin/api/get-subjects.php?faculty=${currentFaculty}&semester=${currentSemester}&class_id=${currentClassId}`)
-            .then(response => response.json())
-            .then(data => {
-                if(data.error) {
-                    showError(data.error);
-                    return;
-                }
-                
-                subjectSelect.innerHTML = '<option value="">Select a subject</option>';
-                
-                data.subjects.forEach(subject => {
-                    const option = document.createElement('option');
-                    option.value = subject.subject_id;
-                    option.textContent = `${subject.subject_code} - ${subject.subject_name} (${subject.credits} credits)`;
-                    
-                    // Mark as assigned if already assigned to this class
-                    if(data.assigned_subjects.includes(subject.subject_id)) {
-                        option.dataset.assigned = 'true';
-                        option.textContent += ' ✓';
-                    }
-                    
-                    subjectSelect.appendChild(option);
-                });
-                
-                // Add count info
-                const countSpan = document.getElementById('subjectCount');
-                if(countSpan) {
-                    countSpan.textContent = `${data.count} subjects found`;
-                }
-                
-                showLoading(false);
-            })
-            .catch(error => {
-                console.error('Error loading subjects:', error);
-                showError('Failed to load subjects');
-                showLoading(false);
-            });
+        // Get class data
+        const selectedOption = select.options[select.selectedIndex];
+        this.currentClassId = classId;
+        this.currentFaculty = selectedOption.dataset.faculty;
+        this.currentSemester = selectedOption.dataset.semester;
+        
+        // Load subjects
+        this.loadSubjects(classId);
     }
     
-    function loadTeachers() {
-        if(!teachersTable) return;
+    loadSubjects(classId) {
+        const container = document.getElementById('subjectListContainer');
         
-        showLoading(true);
+        // Show loading
+        container.innerHTML = `
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading subjects for ${this.currentFaculty} - Semester ${this.currentSemester}...</p>
+            </div>
+        `;
         
-        fetch(`../../PHP_Files/admin/api/get-teachers.php?subject_id=${currentSubjectId}&class_id=${currentClassId}`)
-            .then(response => response.json())
-            .then(data => {
-                if(data.error) {
-                    showError(data.error);
-                    return;
-                }
-                
-                const tbody = teachersTable.querySelector('tbody');
-                if(!tbody) return;
-                
-                tbody.innerHTML = '';
-                
-                if(data.teachers.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No active teachers found
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                // Clear selection for new subject
-                selectedTeachers.clear();
-                
-                data.teachers.forEach(teacher => {
-                    const row = document.createElement('tr');
-                    
-                    // Check if teacher is already assigned to this subject+class
-                    const isAssigned = teacher.is_assigned;
-                    const isChecked = isAssigned;
-                    
-                    if(isChecked) {
-                        selectedTeachers.add(teacher.id);
-                    }
-                    
-                    row.innerHTML = `
-                        <td>
+        // Fetch subjects and assignments
+        Promise.all([
+            fetch(`api/get_class_subjects.php?class_id=${classId}`),
+            fetch(`api/get_teacher_assignments.php?teacher_id=${this.teacherId}&class_id=${classId}`)
+        ])
+        .then(async ([subjectsRes, assignmentsRes]) => {
+            // Check if responses are OK
+            if (!subjectsRes.ok) throw new Error(`Subjects API: ${subjectsRes.status}`);
+            if (!assignmentsRes.ok) throw new Error(`Assignments API: ${assignmentsRes.status}`);
+            
+            // Get response text first to debug
+            const subjectsText = await subjectsRes.text();
+            const assignmentsText = await assignmentsRes.text();
+            
+            console.log('Subjects raw:', subjectsText.substring(0, 100));
+            console.log('Assignments raw:', assignmentsText.substring(0, 100));
+            
+            // Parse JSON
+            const subjects = JSON.parse(subjectsText);
+            const assignments = JSON.parse(assignmentsText);
+            
+            if (subjects.success) {
+                this.assignedSubjects = assignments.success ? assignments.assigned_ids : [];
+                this.duplicateSubjects = assignments.duplicates || {};
+                this.renderSubjectList(subjects.data, this.assignedSubjects, this.duplicateSubjects);
+                document.getElementById('saveAssignmentsBtn').disabled = false;
+            } else {
+                throw new Error(subjects.error || 'Failed to load subjects');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `
+                <div class="error-message">
+                    <strong>Error loading subjects:</strong> ${error.message}
+                    <br>
+                    <button onclick="window.location.reload()" class="btn btn-sm btn-primary mt-2">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            document.getElementById('saveAssignmentsBtn').disabled = true;
+        });
+    }
+    
+    renderSubjectList(subjects, assignedIds = [], duplicates = {}) {
+        const container = document.getElementById('subjectListContainer');
+        
+        if (!subjects || subjects.length === 0) {
+            container.innerHTML = `
+                <div class="no-subjects">
+                    <i class="bi bi-book" style="font-size: 48px; opacity: 0.5;"></i>
+                    <h5 style="margin: 15px 0 5px;">No Subjects Found</h5>
+                    <p style="color: #666;">No subjects available for ${this.currentFaculty} - Semester ${this.currentSemester}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div class="selection-summary">
+                <span>
+                    <i class="bi bi-info-circle"></i> 
+                    ${this.currentFaculty} - Semester ${this.currentSemester}
+                </span>
+                <span id="selectedCount">0 subjects selected</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <button type="button" id="selectAllBtn" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-check-all"></i> Select All
+                </button>
+                <button type="button" id="deselectAllBtn" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x"></i> Deselect All
+                </button>
+            </div>
+            <div class="subject-list">
+        `;
+        
+        subjects.forEach(subject => {
+            const isAssigned = assignedIds.includes(subject.subject_id);
+            const duplicate = duplicates[subject.subject_id];
+            
+            html += `
+                <div class="subject-item" data-subject-id="${subject.subject_id}">
+                    <label class="subject-label">
+                        <div style="display: flex; align-items: center; width: 100%;">
                             <input type="checkbox" 
-                                   class="form-check-input teacher-checkbox"
-                                   value="${teacher.id}"
-                                   ${isChecked ? 'checked' : ''}
-                                   ${isAssigned ? 'disabled' : ''}>
-                        </td>
-                        <td>${teacher.name}</td>
-                        <td>${teacher.email}</td>
-                        <td>
-                            <span class="badge ${isAssigned ? 'bg-success' : 'bg-secondary'}">
-                                ${isAssigned ? 'Already Assigned' : 'Available'}
+                                   class="subject-checkbox" 
+                                   value="${subject.subject_id}"
+                                   ${isAssigned ? 'checked' : ''}
+                                   ${duplicate ? 'disabled' : ''}
+                                   onchange="window.assignTeacherSubjects.updateSelectionSummary()">
+                            <span style="flex: 1;">
+                                <span class="subject-name">${this.escapeHtml(subject.subject_name)}</span>
+                                ${subject.subject_code ? 
+                                    `<span class="subject-code">(${this.escapeHtml(subject.subject_code)})</span>` : ''}
+                                ${subject.credits ? 
+                                    `<span class="subject-credits">${subject.credits} cr</span>` : ''}
+                                ${duplicate ? 
+                                    `<span class="assigned-badge">Assigned to ${this.escapeHtml(duplicate.teacher_name)}</span>` : ''}
                             </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">
-                                ${teacher.current_assignments} current assignments
-                            </span>
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                });
-                
-                // Add checkbox change listeners
-                document.querySelectorAll('.teacher-checkbox').forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        const teacherId = parseInt(this.value);
-                        if(this.checked) {
-                            selectedTeachers.add(teacherId);
-                        } else {
-                            selectedTeachers.delete(teacherId);
-                        }
-                        updateSelectedCount();
-                    });
-                });
-                
-                updateSelectedCount();
-                showLoading(false);
-            })
-            .catch(error => {
-                console.error('Error loading teachers:', error);
-                showError('Failed to load teachers');
-                showLoading(false);
-            });
-    }
-    
-    function loadCurrentAssignments() {
-        if(!assignmentsList) return;
-        
-        fetch(`../../PHP_Files/admin/api/get-assignments.php?class_id=${currentClassId}`)
-            .then(response => response.json())
-            .then(data => {
-                if(data.error) {
-                    assignmentsList.innerHTML = `
-                        <div class="alert alert-warning">
-                            Failed to load current assignments
                         </div>
-                    `;
-                    return;
-                }
-                
-                const container = assignmentsList.querySelector('.list-group') || assignmentsList;
-                
-                if(data.assignments.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center text-muted py-3">
-                            No teachers assigned yet
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let html = '';
-                data.assignments.forEach(assignment => {
-                    html += `
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>${assignment.subject_code} - ${assignment.subject_name}</strong><br>
-                                    <small class="text-muted">
-                                        <i class="bi bi-person"></i> ${assignment.teacher_name} 
-                                        | Since: ${assignment.start_date}
-                                    </small>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger remove-assignment-btn" 
-                                        data-teacher-id="${assignment.teacher_id}"
-                                        data-subject-id="${assignment.subject_id}">
-                                    <i class="bi bi-x-circle"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                container.innerHTML = html;
-                
-                // Add remove button listeners
-                document.querySelectorAll('.remove-assignment-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const teacherId = this.dataset.teacherId;
-                        const subjectId = this.dataset.subjectId;
-                        removeAssignment(teacherId, subjectId);
-                    });
-                });
-                
-                // Update class info
-                updateClassInfo(data.class_details);
-            })
-            .catch(error => {
-                console.error('Error loading assignments:', error);
-            });
-    }
-    
-    function saveAssignment() {
-        if(selectedTeachers.size === 0) {
-            showError('Please select at least one teacher');
-            return;
-        }
-        
-        if(currentSubjectId === 0) {
-            showError('Please select a subject first');
-            return;
-        }
-        
-        showLoading(true);
-        
-        // Save each selected teacher
-        const promises = Array.from(selectedTeachers).map(teacherId => {
-            return fetch('../../PHP_Files/admin/api/save-assignment.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    teacher_id: teacherId,
-                    subject_id: currentSubjectId,
-                    class_id: currentClassId,
-                    action: 'assign'
-                })
-            })
-            .then(response => response.json());
+                    </label>
+                </div>
+            `;
         });
         
-        Promise.all(promises)
-            .then(results => {
-                const errors = results.filter(r => r.error);
-                const successes = results.filter(r => r.success);
-                
-                if(errors.length > 0) {
-                    showError(`Failed to save some assignments: ${errors.map(e => e.error).join(', ')}`);
-                }
-                
-                if(successes.length > 0) {
-                    showSuccess(`${successes.length} teacher(s) assigned successfully!`);
-                    
-                    // Refresh data
-                    loadCurrentAssignments();
-                    
-                    // Clear selection
-                    selectedTeachers.clear();
-                    document.querySelectorAll('.teacher-checkbox').forEach(cb => cb.checked = false);
-                    updateSelectedCount();
-                    
-                    // Reload teachers to show updated status
-                    loadTeachers();
-                }
-                
-                showLoading(false);
-            })
-            .catch(error => {
-                console.error('Error saving assignments:', error);
-                showError('Failed to save assignments');
-                showLoading(false);
-            });
+        html += '</div>';
+        container.innerHTML = html;
+        
+        // Re-attach event listeners
+        document.getElementById('selectAllBtn')?.addEventListener('click', () => this.selectAll());
+        document.getElementById('deselectAllBtn')?.addEventListener('click', () => this.deselectAll());
+        
+        this.updateSelectionSummary();
     }
     
-    function removeAssignment(teacherId, subjectId) {
-        if(!confirm('Are you sure you want to remove this teacher from this subject?')) {
+    checkDuplicateAssignments(subjects, assignedIds) {
+        // This will be enhanced with actual duplicate check from server
+        const duplicates = {};
+        // For now, just mark subjects already assigned to this teacher/class
+        assignedIds.forEach(id => {
+            duplicates[id] = true;
+        });
+        return duplicates;
+    }
+    
+    updateSelectionSummary() {
+        const checkboxes = document.querySelectorAll('.subject-checkbox:enabled');
+        const checked = document.querySelectorAll('.subject-checkbox:enabled:checked');
+        const count = checked.length;
+        
+        const summary = document.getElementById('selectedCount');
+        if (summary) {
+            summary.textContent = `${count} of ${checkboxes.length} subjects selected`;
+        }
+    }
+    
+    selectAll() {
+        document.querySelectorAll('.subject-checkbox:enabled').forEach(cb => {
+            cb.checked = true;
+        });
+        this.updateSelectionSummary();
+    }
+    
+    deselectAll() {
+        document.querySelectorAll('.subject-checkbox:enabled').forEach(cb => {
+            cb.checked = false;
+        });
+        this.updateSelectionSummary();
+    }
+    
+    saveAssignments() {
+        const checkboxes = document.querySelectorAll('.subject-checkbox:checked');
+        const subjectIds = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (!this.currentClassId) {
+            alert('❌ Please select a class');
             return;
         }
         
-        showLoading(true);
+        // Confirm duplicate assignments
+        const duplicateSubjects = document.querySelectorAll('.subject-checkbox:checked[disabled]');
+        if (duplicateSubjects.length > 0) {
+            if (!confirm(`⚠️ ${duplicateSubjects.length} subject(s) are already assigned to another teacher in this class. Continue anyway?`)) {
+                return;
+            }
+        }
         
-        fetch('../../PHP_Files/admin/api/save-assignment.php', {
+        const saveBtn = document.getElementById('saveAssignmentsBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+        saveBtn.disabled = true;
+        
+        const formData = new FormData();
+        formData.append('teacher_id', this.teacherId);
+        formData.append('class_id', this.currentClassId);
+        subjectIds.forEach(id => formData.append('subject_ids[]', id));
+        
+        fetch('api/assign_teacher_subjects.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                teacher_id: teacherId,
-                subject_id: subjectId,
-                class_id: currentClassId,
-                action: 'remove'
-            })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
-            if(data.error) {
-                showError(data.error);
+            if (data.success) {
+                alert('✅ Subjects assigned successfully!');
+                
+                // ===== FIXED: Use AJAX instead of page reload =====
+                if (window.parent && typeof window.parent.loadPage === 'function') {
+                    // If inside admin panel iframe/window
+                    window.parent.loadPage('pages/teacher_management.php');
+                    
+                    // Check if this is in a modal/popup
+                    if (window.opener) {
+                        window.close();
+                    } else {
+                        // Go back in history
+                        window.history.back();
+                    }
+                } else if (typeof window.loadPage === 'function') {
+                    // If loadPage is available in current window
+                    window.loadPage('pages/teacher_management.php');
+                } else {
+                    // Fallback to normal redirect
+                    window.location.href = 'pages/teacher_management.php';
+                }
             } else {
-                showSuccess(data.message);
-                loadCurrentAssignments();
-                loadTeachers(); // Refresh teacher list
+                throw new Error(data.error || 'Failed to save');
             }
-            showLoading(false);
         })
         .catch(error => {
-            console.error('Error removing assignment:', error);
-            showError('Failed to remove assignment');
-            showLoading(false);
+            alert('❌ Error: ' + error.message);
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
         });
     }
     
-    function updateSelectedCount() {
-        const countElement = document.getElementById('selectedCount');
-        if(countElement) {
-            countElement.textContent = selectedTeachers.size;
-        }
-        
-        // Update save button state
-        if(saveBtn) {
-            saveBtn.disabled = selectedTeachers.size === 0;
-        }
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
-    
-    function updateClassInfo(classDetails) {
-        const infoElement = document.getElementById('classInfo');
-        if(infoElement && classDetails) {
-            infoElement.innerHTML = `
-                <strong>${classDetails.faculty} Semester ${classDetails.semester}</strong><br>
-                <small class="text-muted">
-                    Batch: ${classDetails.batch_year} | 
-                    Students: ${classDetails.student_count || 0}
-                </small>
-            `;
-        }
-    }
-    
-    function clearTeachersTable() {
-        const tbody = teachersTable?.querySelector('tbody');
-        if(tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        Select a subject to view available teachers
-                    </td>
-                </tr>
-            `;
-        }
-        selectedTeachers.clear();
-        updateSelectedCount();
-    }
-    
-    function showLoading(show) {
-        if(loadingSpinner) {
-            loadingSpinner.style.display = show ? 'block' : 'none';
-        }
-        if(saveBtn) {
-            saveBtn.disabled = show;
-        }
-    }
-    
-    function showError(message) {
-        // Create or update error alert
-        let alertElement = document.getElementById('errorAlert');
-        if(!alertElement) {
-            alertElement = document.createElement('div');
-            alertElement.id = 'errorAlert';
-            alertElement.className = 'alert alert-danger alert-dismissible fade show';
-            alertElement.innerHTML = `
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <span id="errorMessage"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.querySelector('.container').prepend(alertElement);
-        }
-        
-        document.getElementById('errorMessage').textContent = message;
-        alertElement.style.display = 'block';
-        
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            alertElement.style.display = 'none';
-        }, 5000);
-    }
-    
-    function showSuccess(message) {
-        // Create or update success alert
-        let alertElement = document.getElementById('successAlert');
-        if(!alertElement) {
-            alertElement = document.createElement('div');
-            alertElement.id = 'successAlert';
-            alertElement.className = 'alert alert-success alert-dismissible fade show';
-            alertElement.innerHTML = `
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <span id="successMessage"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.querySelector('.container').prepend(alertElement);
-        }
-        
-        document.getElementById('successMessage').textContent = message;
-        alertElement.style.display = 'block';
-        
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            alertElement.style.display = 'none';
-        }, 5000);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.assignTeacherSubjects = new AssignTeacherSubjects();
+});
+
+// Handle cancel button
+document.getElementById('cancelBtn')?.addEventListener('click', function() {
+    if (window.parent && typeof window.parent.loadPage === 'function') {
+        window.parent.loadPage('pages/teacher_management.php');
+    } else if (typeof window.loadPage === 'function') {
+        window.loadPage('pages/teacher_management.php');
+    } else {
+        window.location.href = 'pages/teacher_management.php';
     }
 });

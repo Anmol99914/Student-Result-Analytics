@@ -233,7 +233,6 @@ function time_elapsed_string($datetime, $full = false) {
     $ago = new DateTime($datetime);
     $diff = $now->diff($ago);
 
-    // Don't use $w (weeks) property which is deprecated in PHP 8.2+
     // Instead, calculate weeks from days
     $weeks = floor($diff->d / 7);
     $diff->d -= $weeks * 7;

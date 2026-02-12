@@ -89,16 +89,15 @@ function executeScriptsInContent(container) {
     scripts.forEach(script => {
         console.log('Found script:', script.src || 'inline script');
         
-        // SKIP external scripts that pages include themselves
-        if (script.src && (
-            script.src.includes('class-management.js') || 
-            script.src.includes('student-management.js') ||
-            script.src.includes('teacher-management.js')
-        )) {
-            console.log('Skipping external script - page includes it:', script.src);
-            return; // Skip this script
-        }
-        
+       // IMPORTANT: DO NOT SKIP ANY SCRIPTS - LOAD THEM ALL
+            if (script.src) {
+                console.log('Loading external script:', script.src);
+                const newScript = document.createElement('script');
+                newScript.src = script.src;
+                newScript.async = false;
+                document.head.appendChild(newScript);
+            }
+                    
         // If it's an external script (other than management scripts)
         if (script.src) {
             const newScript = document.createElement('script');

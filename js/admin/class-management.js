@@ -89,7 +89,7 @@ if (typeof window.ClassManager !== 'undefined') {
             const status = document.getElementById('statusFilter')?.value || '';
             
             // Build query string
-            let url = 'get_classes.php';
+            let url = '/Student_Result_Analytics/PHP_Files/admin/get_classes.php';
             const params = new URLSearchParams();
             
             if (faculty) params.append('faculty', faculty);
@@ -171,46 +171,33 @@ if (typeof window.ClassManager !== 'undefined') {
                 const studentCount = cls.student_count || 0;
                 
                 html += `
-                    <tr data-faculty="${cls.faculty}" data-semester="${cls.semester}" data-status="${cls.status}">
+                    <tr data-class-id="${cls.class_id}" data-faculty="${cls.faculty}" data-semester="${cls.semester}" data-status="${cls.status}">
                         <td><strong>${cls.class_id}</strong></td>
                         <td>
                             <span class="badge bg-primary">${cls.faculty}</span>
-                            <br><small>${cls.faculty_name || ''}</small>
                         </td>
                         <td>Semester ${cls.semester}</td>
-                        <td>${cls.batch_year}</td>
+                        <td>${cls.batch_year || 'N/A'}</td>
                         <td>${statusBadge}</td>
+                        <td>${studentCount} students</td>
+                        <td>${cls.created_at ? new Date(cls.created_at).toLocaleDateString() : 'N/A'}</td>
                         <td>
-                            ${studentCount} students
-                            <br>
-                            <a href="#" onclick="window.classManager.viewClassStudents(${cls.class_id})" class="small">
+                            <button class="btn btn-sm btn-outline-info" onclick="window.classManager.viewClassDetails(${cls.class_id})" title="View">
                                 <i class="bi bi-eye"></i> View
-                            </a>
-                        </td>
-                        <td>${new Date(cls.created_at).toLocaleDateString()}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="assign_teachers.php?class_id=${cls.class_id}" 
-                                   class="btn btn-outline-primary" title="Assign Teachers">
-                                    <i class="bi bi-person-plus"></i>
-                                </a>
-                                <button class="btn btn-outline-info" onclick="window.classManager.viewClassDetails(${cls.class_id})" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button class="btn btn-outline-warning" onclick="window.classManager.toggleClassStatus(${cls.class_id}, '${cls.status}')" 
-                                        title="${cls.status === 'active' ? 'Deactivate' : 'Activate'}">
-                                    <i class="bi bi-power"></i>
-                                </button>
-                            </div>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="window.classManager.toggleClassStatus(${cls.class_id}, '${cls.status}')" 
+                                    title="${cls.status === 'active' ? 'Deactivate' : 'Activate'}">
+                                <i class="bi bi-power"></i> ${cls.status === 'active' ? 'Deactivate' : 'Activate'}
+                            </button>
                         </td>
                     </tr>
                 `;
             });
             
             html += `
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
             `;
             
             container.innerHTML = html;
@@ -314,8 +301,8 @@ if (typeof window.ClassManager !== 'undefined') {
                                     <div class="mb-3">
                                         <label class="form-label">Batch Year</label>
                                         <input type="number" name="batch_year" class="form-control" 
-                                               value="2025" min="2020" max="2030">
-                                        <small class="text-muted">Default is current year (2025)</small>
+                                               value="2026" min="2020" max="2030">
+                                        <small class="text-muted">Default is current year (2026)</small>
                                     </div>
                                     
                                     <div class="alert alert-info">
@@ -423,13 +410,90 @@ if (typeof window.ClassManager !== 'undefined') {
         }
         viewClassDetails(classId) {
             console.log('Viewing class details:', classId);
-            loadPage(`admin_classes.php?class_id=${classId}`);
+            
+            // Show class details in a simple modal
+            const classRow = document.querySelector(`tr[data-class-id="${classId}"]`);
+            if (!classRow) {
+                alert('Class details not found');
+                return;
+            }
+            
+            // Get class data from the row - FIXED: Use textContent instead of innerText
+            const faculty = classRow.querySelector('td:nth-child(2) .badge')?.textContent?.trim() || 'N/A';
+            const semester = classRow.querySelector('td:nth-child(3)')?.textContent?.trim() || 'N/A';
+            const batchYear = classRow.querySelector('td:nth-child(4)')?.textContent?.trim() || 'N/A';
+            const status = classRow.querySelector('td:nth-child(5) .badge')?.textContent?.trim() || 'active';
+            const students = classRow.querySelector('td:nth-child(6)')?.textContent?.trim() || '0 students';
+            const created = classRow.querySelector('td:nth-child(7)')?.textContent?.trim() || 'N/A';
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div class="modal fade" id="viewClassModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-info text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-building"></i> Class Details (ID: #${classId})
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th style="width: 35%">Class ID</th>
+                                        <td><strong>#${classId}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Faculty</th>
+                                        <td><span class="badge bg-primary">${faculty}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Semester</th>
+                                        <td>${semester}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Batch Year</th>
+                                        <td>${batchYear}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td><span class="badge bg-${status.toLowerCase().includes('active') ? 'success' : 'secondary'}">${status}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Students</th>
+                                        <td>${students}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Created Date</th>
+                                        <td>${created}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('viewClassModal');
+            if (existingModal) existingModal.remove();
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('viewClassModal'));
+            modal.show();
+            
+            // Clean up on hide
+            document.getElementById('viewClassModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
         }
         
-        viewClassStudents(classId) {
-            console.log('Viewing class students:', classId);
-            loadPage(`students_list.php?class_id=${classId}`);
-        }
         
         toggleClassStatus(classId, currentStatus) {
             console.log('Toggling class status:', classId, currentStatus);
@@ -502,3 +566,5 @@ window.addEventListener('pageLoaded', function(event) {
         setTimeout(initializeClassManager, 100);
     }
 });
+
+

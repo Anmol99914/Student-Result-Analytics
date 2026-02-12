@@ -1,9 +1,8 @@
 <?php
-// teacher_management.php - SIMPLE TEMPLATE
+// teacher_management.php - SIMPLE VERSION
 ?>
 <div class="container-fluid p-4">
     <div class="teacher-management-page">
-        <!-- Container for JavaScript -->
         <div id="teachers-container">
             <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
@@ -13,29 +12,69 @@
             </div>
         </div>
     </div>
+    <!-- Assign Subjects Modal -->
+<div class="modal fade" id="assignSubjectsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-book"></i> Assign Subjects
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assignSubjectsModalBody">
+                <!-- Content loaded via AJAX -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
-<!-- Load teacher management JS -->
-<script src="../../js/admin/teacher-management.js?v=<?php echo time(); ?>"></script>
-
-<!-- Simple initialization -->
+<!-- Load teacher management JS - FORCE LOAD EVEN IF EXISTS -->
 <script>
-console.log('Teacher management page loaded');
+// Remove any existing teacherManager
+window.teacherManager = null;
+</script>
 
-// Check if teacherManager exists
-function initTeacherManager() {
-    if (window.teacherManager && typeof window.teacherManager.init === 'function') {
-        console.log('teacherManager found, initializing...');
+<script src="/Student_Result_Analytics/js/admin/teacher-management.js?v=<?php echo time(); ?>"></script>
+
+<script>
+// Wait for script to load
+console.log('Waiting for teacherManager...');
+
+function waitForTeacherManager() {
+    if (window.teacherManager) {
+        console.log('✅ teacherManager loaded, initializing...');
         window.teacherManager.init();
         return true;
     }
-    console.log('teacherManager not ready yet');
+    console.log('⏳ Still waiting for teacherManager...');
     return false;
 }
 
-// Try to initialize
-if (!initTeacherManager()) {
-    // Single retry after short delay
-    setTimeout(initTeacherManager, 300);
-}
+// Check every 100ms for 2 seconds
+let attempts = 0;
+const interval = setInterval(function() {
+    attempts++;
+    if (window.teacherManager) {
+        clearInterval(interval);
+        window.teacherManager.init();
+    } else if (attempts > 20) { // 2 seconds timeout
+        clearInterval(interval);
+        console.error('❌ teacherManager failed to load');
+        document.getElementById('teachers-container').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                Failed to load teacher management. 
+                <button class="btn btn-sm btn-danger ms-2" onclick="location.reload()">
+                    Refresh Page
+                </button>
+            </div>
+        `;
+    }
+}, 100);
 </script>

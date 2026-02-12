@@ -1,70 +1,90 @@
 <?php
 session_start();
-include("../../../config.php");
+require_once '../../../config.php';
 
 header('Content-Type: application/json');
 
-if(!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true){
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true) {
     echo json_encode([]);
     exit();
 }
 
-// Check if stats are requested
-if (isset($_GET['stats']) && $_GET['stats'] == 'true') {
-    // Get total students
-    $totalQuery = "SELECT COUNT(*) as total FROM student";
-    $totalResult = $connection->query($totalQuery);
-    $total = $totalResult->fetch_assoc()['total'];
-    
-    // Get active students
-    $activeQuery = "SELECT COUNT(*) as active FROM student WHERE is_active = 1";
-    $activeResult = $connection->query($activeQuery);
-    $active = $activeResult->fetch_assoc()['active'];
-    
-    // Get students with pending payments (you need to implement this based on your payment table)
-    $pendingQuery = "SELECT COUNT(DISTINCT p.student_id) as pending 
-                     FROM payment p 
-                     WHERE p.payment_status != 'Paid'";
-    $pendingResult = $connection->query($pendingQuery);
-    $pending = $pendingResult->fetch_assoc()['pending'] ?? 0;
-    
-    // Get recent students (last 7 days)
-    $recentQuery = "SELECT COUNT(*) as recent FROM student 
-                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-    $recentResult = $connection->query($recentQuery);
-    $recent = $recentResult->fetch_assoc()['recent'];
-    
-    echo json_encode([
-        'total' => $total,
-        'active' => $active,
-        'pending' => $pending,
-        'recent' => $recent
-    ]);
-    exit();
+$faculty = $_GET['faculty'] ?? '';
+$semester = $_GET['semester'] ?? '';
+$status = $_GET['status'] ?? '';
+$search = $_GET['search'] ?? '';
+
+// Get students with their LATEST payment status
+$sql = "SELECT s.*, c.faculty, c.semester,
+               p.payment_status, p.due_amount, p.payment_date
+        FROM student s
+        LEFT JOIN class c ON s.class_id = c.class_id
+        LEFT JOIN (
+            SELECT p1.* 
+            FROM payment p1
+            INNER JOIN (
+                SELECT student_id, MAX(payment_id) as max_id
+                FROM payment
+                GROUP BY student_id
+            ) p2 ON p1.payment_id = p2.max_id
+        ) p ON s.student_id = p.student_id
+        WHERE 1=1";
+
+$params = [];
+$types = '';
+
+if ($faculty) {
+    $sql .= " AND c.faculty = ?";
+    $params[] = $faculty;
+    $types .= 's';
 }
 
-$query = "
-    SELECT 
-        s.student_id,
-        s.student_name,
-        s.email,
-        s.phone_number,
-        s.class_id,
-        s.semester_id,
-        s.is_active,
-        s.created_at,
-        c.faculty,
-        c.semester
-    FROM student s
-    LEFT JOIN class c ON s.class_id = c.class_id
-    ORDER BY s.created_at DESC
-";
+if ($semester) {
+    $sql .= " AND c.semester = ?";
+    $params[] = $semester;
+    $types .= 'i';
+}
 
-$result = $connection->query($query);
+if ($status) {
+    $sql .= " AND s.is_active = ?";
+    $params[] = ($status === 'active') ? 1 : 0;
+    $types .= 'i';
+}
+
+if ($search) {
+    $sql .= " AND (s.student_id LIKE ? OR s.student_name LIKE ? OR s.email LIKE ?)";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= 'sss';
+}
+
+$sql .= " ORDER BY s.student_id";
+
+$stmt = $connection->prepare($sql);
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+
 $students = [];
-
-while($row = $result->fetch_assoc()){
-    $students[] = $row;
+while ($row = $result->fetch_assoc()) {
+    $students[] = [
+        'student_id' => $row['student_id'],
+        'student_name' => $row['student_name'],
+        'email' => $row['email'],
+        'faculty' => $row['faculty'] ?? 'N/A',
+        'semester' => $row['semester'] ?? 'N/A',
+        'is_active' => (int)$row['is_active'],
+        'payment_status' => $row['payment_status'] ?? 'Unpaid',
+        'due_amount' => (float)($row['due_amount'] ?? 0),
+        'payment_date' => $row['payment_date'] ?? null,
+        'phone_number' => $row['phone_number'] ?? '',
+        'admission_year' => $row['admission_year'] ?? '',
+        'batch_code' => $row['batch_code'] ?? ''
+    ];
 }
 
 echo json_encode($students);

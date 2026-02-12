@@ -146,59 +146,33 @@ include(__DIR__ . '/../../../config.php');
     </div>
 </div>
 
+
+
 <script>
-// RUN ONLY ONCE - check if already executed
-if (!window.studentPageInitialized) {
-    window.studentPageInitialized = true;
+// SINGLE INITIALIZATION - CHECK IF ALREADY LOADED
+if (!window.studentManagerLoaded) {
+    window.studentManagerLoaded = true;
     
-    console.log('📦 Loading student management system...');
+    console.log('📦 First time loading student management...');
     
-    // 1. Remove any existing studentManager
-    if (window.studentManager) {
-        console.log('🔄 Clearing existing studentManager');
-        delete window.studentManager;
-    }
+    const script = document.createElement('script');
+    script.src = '/Student_result_analytics/js/admin/student-management.js?v=' + Date.now();
+    script.async = false;
     
-    // 2. Load the script file
-    const studentManagementScript = document.createElement('script');
-    studentManagementScript.src = '/Student_result_analytics/js/admin/student-management.js';
-    studentManagementScript.async = false;
-    
-    // 3. After script loads
-    studentManagementScript.onload = function() {
+    script.onload = function() {
         console.log('✅ student-management.js loaded');
-        console.log('StudentManager defined:', typeof StudentManager);
-        
-        setTimeout(() => {
-            if (document.getElementById('studentsContainer')) {
-                console.log('🎯 On student management page, initializing...');
-                
-                if (typeof StudentManager !== 'undefined') {
-                    if (!window.studentManager) {
-                        console.log('🚀 Creating StudentManager instance');
-                        window.studentManager = new StudentManager();
-                        console.log('✅ studentManager created:', !!window.studentManager);
-                    }
-                }
-            }
-        }, 300);
+        // DON'T create instance here - let the script handle it
     };
     
-    // 4. Handle errors
-    studentManagementScript.onerror = function(error) {
-        console.error('❌ Failed to load student-management.js:', error);
-    };
+    document.head.appendChild(script);
     
-    // 5. Add to DOM
-    document.head.appendChild(studentManagementScript);
-    
-    // 6. Safety check
-    setTimeout(() => {
-        console.log('🕒 Safety check:');
-        console.log('StudentManager:', typeof StudentManager);
-        console.log('studentManager:', !!window.studentManager);
-    }, 2000);
 } else {
-    console.log('⚠️ Student page already initialized, skipping');
+    console.log('⚠️ Student management already loaded, reusing existing instance');
+    
+    // Just re-initialize the existing manager
+    if (window.studentManager && typeof window.studentManager.loadStudents === 'function') {
+        console.log('🔄 Reloading student data...');
+        window.studentManager.loadStudents();
+    }
 }
 </script>
