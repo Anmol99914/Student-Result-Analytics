@@ -6,6 +6,7 @@ let TEACHER_NAME = '';
 
 // ===== CORE FUNCTIONS =====
 
+
 // Load any page via AJAX
 function loadPage(url) {
     console.log('Loading page:', url);
@@ -233,6 +234,7 @@ function loadAddResultForm() {
     loadPage('Results/enter_results.php');
 }
 
+
 // Load Profile
 function loadProfile() {
     console.log('Loading profile');
@@ -366,7 +368,6 @@ function viewClassStudents(classId) {
 }
 
 // View class details
-// View class details - PROPER IMPLEMENTATION
 function viewClassDetails(classId) {
     console.log('Loading class details:', classId);
     
@@ -427,6 +428,75 @@ function viewClassDetails(classId) {
                     </div>
                 `;
                 container.classList.remove('loading-container');
+            }
+        });
+}
+
+// ===== CLASS PERFORMANCE MODAL =====
+function viewClassPerformanceModal(classId, className) {
+    console.log('Loading performance modal for class:', classId, className);
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('performanceModal');
+    if (existingModal) existingModal.remove();
+    
+    // Show loading in modal
+    const modalHTML = `
+        <div class="modal fade" id="performanceModal" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-bar-chart-fill me-2"></i> Class Performance: ${className}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-info mb-3" role="status"></div>
+                            <p>Loading performance data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('performanceModal'));
+    modal.show();
+    
+    // Fetch performance data
+    fetch(`class_performance_modal.php?class_id=${classId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            const modalBody = document.querySelector('#performanceModal .modal-body');
+            if (modalBody) {
+                modalBody.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading performance data:', error);
+            const modalBody = document.querySelector('#performanceModal .modal-body');
+            if (modalBody) {
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger m-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Error loading performance data:</strong> ${error.message}
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh Page
+                            </button>
+                        </div>
+                    </div>
+                `;
             }
         });
 }
@@ -607,6 +677,7 @@ window.closeOffcanvas = closeOffcanvas;
 
 // ===== GLOBAL EXPORTS =====
 // Make sure all functions are available globally
+window.viewClassPerformanceModal = viewClassPerformanceModal;
 window.viewClassStudents = viewClassStudents;
 window.viewClassDetails = viewClassDetails;
 window.viewStudentDetails = viewStudentDetails;

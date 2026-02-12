@@ -68,45 +68,29 @@ $faculty_name_result = $faculty_name_stmt->get_result();
 $faculty_name_data = $faculty_name_result->fetch_assoc();
 $faculty_display_name = $faculty_name_data['faculty_name'] ?? $faculty_code;
 
-// Get subjects for this faculty_id and semester
+// Get ONLY subjects assigned to this teacher for this class
 $sql = "SELECT s.* 
         FROM subject s
-        WHERE s.faculty_id = ? 
+        INNER JOIN teacher_subject_assignment tsa ON s.subject_id = tsa.subject_id
+        WHERE tsa.teacher_id = ? 
+        AND tsa.class_id = ?
+        AND s.faculty_id = ? 
         AND s.semester = ?
         AND s.status = 'active'
         ORDER BY s.subject_name";
 
 $stmt = $connection->prepare($sql);
-$stmt->bind_param("ii", $faculty_id, $semester);
+$stmt->bind_param("iiii", $_SESSION['teacher_id'], $class_id, $faculty_id, $semester);
 $stmt->execute();
 $result = $stmt->get_result();
 
-error_log("Found " . $result->num_rows . " subjects for faculty_id=$faculty_id (code: $faculty_code), semester=$semester");
+error_log("Found " . $result->num_rows . " ASSIGNED subjects for teacher_id={$_SESSION['teacher_id']}, class_id=$class_id");
 
 if ($result->num_rows === 0) {
     echo '<div class="alert alert-warning">';
-    echo '<h5><i class="bi bi-exclamation-triangle"></i> No Subjects Found</h5>';
-    echo '<p>No subjects found for ' . htmlspecialchars($faculty_display_name) . ' - Semester ' . $semester . '.</p>';
-    
-    // Show available semesters for this faculty
-    $debug_sql = "SELECT DISTINCT semester FROM subject WHERE faculty_id = ? ORDER BY semester";
-    $debug_stmt = $connection->prepare($debug_sql);
-    $debug_stmt->bind_param("i", $faculty_id);
-    $debug_stmt->execute();
-    $debug_result = $debug_stmt->get_result();
-    
-    $available_semesters = [];
-    while ($row = $debug_result->fetch_assoc()) {
-        $available_semesters[] = $row['semester'];
-    }
-    
-    if (!empty($available_semesters)) {
-        echo '<p>Available semesters for ' . htmlspecialchars($faculty_display_name) . ': ' . 
-             implode(', ', $available_semesters) . '</p>';
-    } else {
-        echo '<p>No subjects found for any semester of ' . htmlspecialchars($faculty_display_name) . '</p>';
-    }
-    
+    echo '<h5><i class="bi bi-exclamation-triangle"></i> No Subjects Assigned</h5>';
+    echo '<p>You don\'t have any subjects assigned for this class.</p>';
+    echo '<p class="mb-0">Contact administrator to assign subjects to you.</p>';
     echo '</div>';
     exit();
 }
@@ -122,7 +106,7 @@ $student_count = $student_data['student_count'] ?? 0;
 
 echo '<div class="row mb-3">';
 echo '<div class="col-12">';
-echo '<button class="btn btn-outline-secondary mb-3" onclick="loadTeacherClasses()">';
+echo '<button class="btn btn-outline-secondary mb-3" onclick="window.ResultsSystem.loadClasses()">';
 echo '<i class="bi bi-arrow-left"></i> Back to Classes';
 echo '</button>';
 echo '<h5>' . htmlspecialchars($faculty_display_name) . ' - Semester ' . $semester . '</h5>';

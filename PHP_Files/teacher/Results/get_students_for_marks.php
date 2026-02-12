@@ -66,17 +66,7 @@ while ($row = $marks_result->fetch_assoc()) {
     $existing_marks[$row['student_id']] = $row;
 }
 
-// Check if ANY marks are verified
-$any_verified = false;
-foreach ($students_result->fetch_all(MYSQLI_ASSOC) as $student) {
-    if (isset($existing_marks[$student['student_id']]['verification_status']) && 
-        $existing_marks[$student['student_id']]['verification_status'] == 'verified') {
-        $any_verified = true;
-        break;
-    }
-}
-// Reset pointer to beginning for later use
-$students_result->data_seek(0);
+
 ?>
 
 <div class="card">
@@ -121,13 +111,7 @@ $students_result->data_seek(0);
             <input type="hidden" id="currentFaculty" value="<?php echo htmlspecialchars($class_data['faculty'] ?? ''); ?>">
             <input type="hidden" id="currentSemester" value="<?php echo $class_data['semester'] ?? 0; ?>">
             
-            <?php if ($any_verified): ?>
-            <div class="alert alert-warning mb-3">
-                <i class="bi bi-exclamation-triangle"></i> 
-                <strong>Warning:</strong> Some marks are already verified. Verified marks cannot be edited.
-            </div>
-            <?php endif; ?>
-            
+
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
@@ -141,66 +125,80 @@ $students_result->data_seek(0);
                         </tr>
                     </thead>
                     <tbody>
-                        <?php
-                        $counter = 1;
-                        while ($student = $students_result->fetch_assoc()):
-                            $existing = $existing_marks[$student['student_id']] ?? null;
-                            $is_verified = ($existing && $existing['verification_status'] == 'verified');
-                        ?>
-                        <tr>
-                            <td><?php echo $counter++; ?></td>
-                            <td><strong><?php echo htmlspecialchars($student['student_id']); ?></strong></td>
-                            <td><?php echo htmlspecialchars($student['student_name']); ?></td>
-                            
-                            <!-- Marks input -->
-                            <td>
-                                <div class="input-group">
-                                    <input type="number" 
-                                           class="form-control marks-input <?php echo $is_verified ? 'bg-light' : ''; ?>" 
-                                           id="marks-<?php echo $student['student_id']; ?>"
-                                           value="<?php echo $existing['marks_obtained'] ?? ''; ?>" 
-                                           min="0" max="100" 
-                                           step="0.5"
-                                           data-student-id="<?php echo $student['student_id']; ?>"
-                                           <?php echo $is_verified ? 'readonly' : ''; ?>
-                                           <?php echo $is_verified ? 'title="Verified marks cannot be edited"' : ''; ?>>
-                                    <span class="input-group-text">/100</span>
-                                </div>
-                                <div class="form-text"><small>Enter marks (0-100)</small></div>
-                            </td>
-                            
-                            <!-- Grade display -->
-                            <td>
-                                <?php if ($existing): ?>
-                                    <span class="badge grade-badge grade-<?php echo str_replace('+', 'plus', $existing['grade']); ?>">
-                                        <?php echo $existing['grade']; ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary" id="grade-<?php echo $student['student_id']; ?>">
-                                        <?php echo $existing['grade'] ?? '--'; ?>
-                                    </span>
-                                <?php endif; ?>
-                            </td>
-                            
-                            <!-- Status -->
-                            <td>
-                                <?php if ($existing): ?>
-                                    <?php
-                                    $status_class = '';
-                                    if ($existing['verification_status'] == 'verified') $status_class = 'bg-success';
-                                    elseif ($existing['verification_status'] == 'rejected') $status_class = 'bg-danger';
-                                    else $status_class = 'bg-warning';
-                                    ?>
-                                    <span class="badge <?php echo $status_class; ?>">
-                                        <?php echo ucfirst($existing['verification_status']); ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="badge bg-light text-dark">Not Entered</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    </tbody>
+    <?php
+    $counter = 1;
+    while ($student = $students_result->fetch_assoc()):
+        $existing = $existing_marks[$student['student_id']] ?? null;
+        $is_verified = ($existing && $existing['verification_status'] == 'verified');
+    ?>
+    <tr>
+        <td><?php echo $counter++; ?></td>
+        <td><strong><?php echo htmlspecialchars($student['student_id']); ?></strong></td>
+        <td><?php echo htmlspecialchars($student['student_name']); ?></td>
+        
+        <!-- Marks input -->
+        <td>
+            <div class="input-group">
+                <input type="number" 
+                       class="form-control marks-input <?php echo $is_verified ? 'bg-light text-muted' : ''; ?>" 
+                       id="marks-<?php echo $student['student_id']; ?>"
+                       data-student-id="<?php echo $student['student_id']; ?>"
+                       value="<?php echo $existing['marks_obtained'] ?? ''; ?>" 
+                       min="0" max="100" 
+                       step="0.5"
+                       <?php echo $is_verified ? 'readonly disabled' : ''; ?>
+                       <?php echo $is_verified ? 'title="✓ Verified marks - Cannot edit"' : ''; ?>>
+                <span class="input-group-text <?php echo $is_verified ? 'bg-light text-muted' : ''; ?>">/100</span>
+            </div>
+            <?php if ($is_verified): ?>
+                <small class="text-success">
+                    <i class="bi bi-check-circle"></i> Verified - Locked
+                </small>
+            <?php else: ?>
+                <small class="text-muted">Enter marks (0-100)</small>
+            <?php endif; ?>
+        </td>
+        
+        <!-- Grade display -->
+        <td>
+            <?php if ($existing): ?>
+                <span class="badge grade-badge grade-<?php echo str_replace('+', 'plus', $existing['grade']); ?>">
+                    <?php echo $existing['grade']; ?>
+                </span>
+            <?php else: ?>
+                <span class="badge bg-secondary" id="grade-<?php echo $student['student_id']; ?>">
+                    --
+                </span>
+            <?php endif; ?>
+        </td>
+        
+        <!-- Status -->
+        <td>
+            <?php if ($existing): ?>
+                <?php
+                $status_class = '';
+                $status_text = '';
+                if ($existing['verification_status'] == 'verified') {
+                    $status_class = 'bg-success';
+                    $status_text = 'Verified';
+                } elseif ($existing['verification_status'] == 'rejected') {
+                    $status_class = 'bg-danger';
+                    $status_text = 'Rejected';
+                } else {
+                    $status_class = 'bg-warning';
+                    $status_text = 'Pending';
+                }
+                ?>
+                <span class="badge <?php echo $status_class; ?>">
+                    <?php echo $status_text; ?>
+                </span>
+            <?php else: ?>
+                <span class="badge bg-light text-dark">Not Entered</span>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+</tbody>
                 </table>
             </div>
         </div>
@@ -216,20 +214,13 @@ $students_result->data_seek(0);
                     </button>
                 </div>
                 <div>
-                    <?php if ($any_verified): ?>
-                        <!-- Disabled save button if any marks are verified -->
-                        <button type="button" class="btn btn-secondary" disabled>
-                            <i class="bi bi-lock"></i> Some Marks Verified (Read Only)
-                        </button>
-                        <div class="form-text text-danger mt-1">
-                            <small><i class="bi bi-info-circle"></i> Cannot edit because some marks are verified.</small>
-                        </div>
-                    <?php else: ?>
-                        <!-- Save button -->
-                        <button type="button" class="btn btn-success" id="saveBtn" onclick="ResultsMarks.saveAllMarks(); return false;">
-                            <i class="bi bi-check-circle"></i> Save All Marks
-                        </button>
-                    <?php endif; ?>
+                    <!-- Save button - ALWAYS enabled -->
+                    <button type="button" class="btn btn-success" id="saveBtn" onclick="ResultsMarks.saveAllMarks(); return false;">
+                        <i class="bi bi-check-circle"></i> Save All Marks
+                    </button>
+                    <small class="text-muted ms-2">
+                        <i class="bi bi-info-circle"></i> Verified marks (✓) cannot be edited and will be skipped
+                    </small>
                 </div>
             </div>
         </div>

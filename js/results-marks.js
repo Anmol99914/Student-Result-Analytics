@@ -26,7 +26,7 @@ document.addEventListener('click', function(event) {
     }
 });
 
-const ResultsMarks = (function() {
+var ResultsMarks = (function() {
     'use strict';
     
     // Private variables
@@ -115,51 +115,43 @@ const ResultsMarks = (function() {
         },
         
         // showSuccessMessage:
-        showSuccessMessage: function(studentCount, status, isUpdate = false) {
-            const action = isUpdate ? 'Updated' : 'Saved';
-            const icon = isUpdate ? 'bi-arrow-clockwise' : 'bi-check-circle-fill';
-            const title = isUpdate ? 'Marks Updated!' : 'Marks Saved Successfully!';
-            
-            const successHtml = `
-                <div class="alert alert-success alert-dismissible fade show mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="bi ${icon} fs-4 me-3"></i>
-                        <div class="flex-grow-1">
-                            <h5 class="mb-1">${title}</h5>
-                            <p class="mb-0">
-                                ${action} marks for <strong>${studentCount}</strong> students. 
-                                Status: <span class="badge bg-warning">${status}</span>
-                            </p>
-                            <small class="text-muted">
-                                ${isUpdate ? 'Changes submitted for re-verification' : 'Awaiting admin verification'}
-                            </small>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-sm btn-primary me-2" 
-                                onclick="ResultsMarks.goBackToSubjects()">
-                            <i class="bi bi-arrow-left"></i> Back to Subjects
-                        </button>
-                        <small class="text-muted">You can continue editing below</small>
-                    </div>
+showSuccessMessage: function(studentCount, status, isUpdate = false) {
+    const action = isUpdate ? 'Updated' : 'Saved';
+    const icon = isUpdate ? 'bi-arrow-clockwise' : 'bi-check-circle-fill';
+    const title = isUpdate ? 'Marks Updated!' : 'Marks Saved Successfully!';
+    
+    const successHtml = `
+        <div class="alert alert-success alert-dismissible fade show mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi ${icon} fs-4 me-3"></i>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">${title}</h5>
+                    <p class="mb-0">
+                        ${action} marks for <strong>${studentCount || 0}</strong> students. 
+                        Status: <span class="badge bg-warning">Pending</span>
+                    </p>
+                    <small class="text-muted">Awaiting admin verification</small>
                 </div>
-            `;
-            
-            // Remove any existing success alerts
-            document.querySelectorAll('.alert-success').forEach(alert => alert.remove());
-            
-            // Insert at the top of the card
-            const cardHeader = document.querySelector('.card-header');
-            if (cardHeader && cardHeader.nextElementSibling) {
-                cardHeader.insertAdjacentHTML('afterend', successHtml);
-            }
-            
-            // Store that we've saved at least once
-            if (!isUpdate) {
-                this.isFirstSave = false;
-                this.savedStudentCount = studentCount;
-            }
-        },
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Remove any existing success alerts
+    document.querySelectorAll('.alert-success').forEach(alert => alert.remove());
+    
+    // Insert at the top of the card
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader && cardHeader.nextElementSibling) {
+        cardHeader.insertAdjacentHTML('afterend', successHtml);
+    }
+    
+    // Store that we've saved at least once
+    if (!isUpdate) {
+        this.isFirstSave = false;
+        this.savedStudentCount = studentCount || 0;
+    }
+},
         
         updateStatusToPending: function() {
             // Update all "Not Entered" status badges to "Pending"
@@ -413,118 +405,136 @@ calculateAllGrades: function() {
 
 
         // Save all marks
-        saveAllMarks: function() {
-            log('Saving all marks...');
+saveAllMarks: function() {
+    log('Saving all marks...');
+    
+    const saveBtn = document.getElementById('saveBtn');
+    const originalText = saveBtn.innerHTML;
+    
+    // Disable button and show loading
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving...';
+    
+    // Collect marks data
+    const marksData = {};
+    let isValid = true;
+    
+    document.querySelectorAll('.marks-input:not([readonly])').forEach(input => {
+        const studentId = input.dataset.studentId;
+        const marks = parseFloat(input.value);
+        
+        if (isNaN(marks) || marks < 0 || marks > 100) {
+            input.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            input.classList.remove('is-invalid');
+            marksData[studentId] = marks;
+        }
+    });
+    
+    if (!isValid) {
+        this.showToast('Some marks are invalid (must be 0-100)', 'warning', 5000); // ✅ FIXED: use showToast
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+        return false;
+    }
+    
+    if (Object.keys(marksData).length === 0) {
+        this.showToast('No marks entered. Please enter marks before saving.', 'warning', 5000); // ✅ FIXED: use showToast
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+        return false;
+    }
+    
+    // Prepare data for AJAX
+    const formData = new FormData();
+    formData.append('class_id', currentClassId);
+    formData.append('subject_id', currentSubjectId);
+    formData.append('teacher_id', currentTeacherId);
+    
+    // Add marks
+    for (const [studentId, marks] of Object.entries(marksData)) {
+        formData.append(`marks[${studentId}]`, marks);
+    }
+    
+    log('Sending data for', Object.keys(marksData).length, 'students');
+    
+    // Submit via AJAX
+    fetch('Results/save_marks.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            log('Save successful:', data);
+          
             
-            const saveBtn = document.getElementById('saveBtn');
-            const originalText = saveBtn.innerHTML;
+            // Show success toast
+            this.showToast(
+                `Saved marks for ${savedCount} student(s)`,
+                'success',
+                3000
+            );
             
-            // Disable button and show loading
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving...';
+            // Update status badges
+            this.updateStatusToPending();
             
-            // Collect marks data
-            const marksData = {};
-            let isValid = true;
+            // Calculate grades
+            this.calculateAllGrades();
             
-            document.querySelectorAll('.marks-input').forEach(input => {
-                const studentId = input.getAttribute('data-student-id');
-                const marks = parseFloat(input.value);
-                
-                if (isNaN(marks) || marks < 0 || marks > 100) {
-                    input.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    input.classList.remove('is-invalid');
-                    marksData[studentId] = marks;
-                }
-            });
+            // Reset save button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Marks';
             
-            if (!isValid) {
-                this.showAlert('warning', 'Some marks are invalid (must be 0-100). Fix them or leave blank.');
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-                return false;
-            }
-            
-            if (Object.keys(marksData).length === 0) {
-                this.showAlert('warning', 'No marks entered. Please enter marks before saving.'); // FIXED: this.showAlert
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-                return false;
-            }
-            
-            // Prepare data for AJAX
-            const formData = new FormData();
-            formData.append('class_id', currentClassId);
-            formData.append('subject_id', currentSubjectId);
-            formData.append('teacher_id', currentTeacherId);
-            
-            // Add marks
-            for (const [studentId, marks] of Object.entries(marksData)) {
-                formData.append('marks[' + studentId + ']', marks);
-            }
-            
-            log('Sending data for', Object.keys(marksData).length, 'students');
-            
-            // Submit via AJAX
-            fetch('Results/save_marks.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-            if (data.success) {
-                log('Save successful:', data);
-                
-                const isUpdate = !this.isFirstSave;
-                
-                // Calculate and update ALL grades after save
-                this.calculateAllGrades();
+            //  Get student count from data.summary or data.count
+            const savedCount = data.summary?.inserted + data.summary?.updated || data.count || 0;
 
-                // This updates grade badges
-                this.updateGradeBadgesAfterSave();
-                
-                // Show save counter update
-                this.updateSaveCounter(isUpdate);
-                
-                // 1. Show quick toast notification
-                const action = isUpdate ? 'Updated' : 'Saved';
-                this.showToast(
-                    `${action} marks for ${data.count} students!`,
-                    'success',
-                    2000
-                );
-                
-                // 2. Show detailed success message
-                this.showSuccessMessage(data.count, data.status, isUpdate);
-                
-                // 3. Update UI
-                this.updateStatusToPending();
-                
-                // 4. Reset button for updates
-                this.resetSaveButton(isUpdate);
-                
-                // 5. Update first save flag
-                if (this.isFirstSave) {
-                    this.isFirstSave = false;
-                    this.savedStudentCount = data.count;
-                }
-            } else {
-                    this.showToast('Error: ' + data.message, 'danger', 5000);
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                log('Save error:', error);
-                this.showAlert('danger', 'Network error: ' + error.message); // FIXED: this.showAlert
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-            });
+            // Show success message in the page
+            const message = data.message || `Saved marks for ${savedCount} student(s)`;
             
-            return false;
-        },
+            // To Call showSuccessMessage with proper values
+            this.showSuccessMessage(savedCount, 'pending', isUpdate);
+            
+            // Remove any existing success messages
+            const existingAlerts = document.querySelectorAll('.alert-success');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            // Create new success message
+            const successHtml = `
+                <div class="alert alert-success alert-dismissible fade show mt-3">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    ${message}
+                    ${data.summary?.skipped > 0 ? `<br><small class="text-muted"> ${data.summary.skipped} verified student(s) were skipped</small>` : ''}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const cardBody = document.querySelector('.card-body');
+            if (cardBody) {
+                cardBody.insertAdjacentHTML('afterbegin', successHtml);
+            }
+            
+        } else {
+            this.showToast('Error: ' + (data.message || 'Failed to save'), 'danger', 5000);
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        log('Save error:', error);
+        this.showToast('❌ Network error: ' + error.message, 'danger', 5000);
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+    });
+    
+    return false;
+},
         
         // Test function
         test: function() {
@@ -545,4 +555,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Export to window
-window.ResultsMarks = ResultsMarks;
+// window.ResultsMarks = ResultsMarks;

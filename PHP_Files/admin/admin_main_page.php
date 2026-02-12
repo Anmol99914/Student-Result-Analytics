@@ -123,12 +123,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <span>Subject Management</span>
                     </a>
                 </li>
-                    <!-- Results -->
-                    <li class="nav-item mb-2">
-                    <a href="results.php" class="nav-link text-white">
-                        <i class="bi bi-trophy"></i> Results
-                    </a>
-                </li>
+                
                 <!-- Result Verification -->
                 <li class="nav-item">
                     <a class="nav-link" href="#" onclick="loadResultsVerification(); return false;">
@@ -181,11 +176,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                 <i class="bi bi-book"></i> Subjects
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadPage('results.php')" class="nav-link text-white">
-                                <i class="bi bi-trophy"></i> Results
-                            </a>
-                        </li>
+                       
                         <li class="nav-item mb-2">
                             <a href="#" onclick="loadPage('assign_teachers.php')" class="nav-link text-white">
                                 <i class="bi bi-person-plus"></i> Assign Teachers

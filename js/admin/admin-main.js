@@ -286,6 +286,13 @@ function loadResultsVerification() {
     }, 1000);
 }
 
+// Load rejected results
+function loadRejectedResults() {
+    console.log('Loading rejected results...');
+    loadPage('Results/view_rejected.php');
+}
+window.loadRejectedResults = loadRejectedResults;
+
 // Pending count function
 function updatePendingCount() {
     fetch('Results/get_pending_count.php')

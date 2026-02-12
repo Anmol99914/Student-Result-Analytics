@@ -18,21 +18,24 @@ if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != 
 $teacher_id = $_SESSION['teacher_id'];
 
 try {
-    // Get classes assigned to this teacher
-    $sql = "SELECT 
+    $sql = "SELECT DISTINCT 
                 c.class_id, 
                 c.faculty, 
                 c.semester, 
                 c.status, 
                 c.created_at,
-                (SELECT COUNT(*) FROM student WHERE class_id = c.class_id) as student_count
+                c.batch_year,
+                (SELECT COUNT(*) FROM student WHERE class_id = c.class_id) as student_count,
+                (SELECT COUNT(*) FROM teacher_subject_assignment tsa 
+                 WHERE tsa.teacher_id = ? 
+                 AND tsa.class_id = c.class_id) as subject_count
             FROM class c
-            INNER JOIN teacher_class_assignments tca ON c.class_id = tca.class_id
-            WHERE tca.teacher_id = ?
+            INNER JOIN teacher_subject_assignment tsa ON c.class_id = tsa.class_id
+            WHERE tsa.teacher_id = ?
             ORDER BY c.faculty, c.semester";
     
     $stmt = $connection->prepare($sql);
-    $stmt->bind_param("i", $teacher_id);
+    $stmt->bind_param("ii", $teacher_id, $teacher_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $classes = $result->fetch_all(MYSQLI_ASSOC);
@@ -41,8 +44,8 @@ try {
         echo '<div class="text-center py-5">
                 <i class="bi bi-table display-4 text-muted mb-3"></i>
                 <h5 class="text-muted">No Classes Assigned</h5>
-                <p class="text-muted">You haven\'t been assigned any classes yet.</p>
-                <p class="text-muted small">Contact the administrator to get classes assigned to you.</p>
+                <p class="text-muted">You haven\'t been assigned to teach any subjects yet.</p>
+                <p class="text-muted small">Contact the administrator to assign subjects to you.</p>
               </div>';
     } else {
         echo '<div class="table-container">
@@ -60,9 +63,10 @@ try {
                                 <th>Faculty</th>
                                 <th width="120">Semester</th>
                                 <th width="150">Students</th>
+                                <th width="150">Subjects</th>
                                 <th width="120">Status</th>
-                                <th width="150">Created</th>
-                                <th width="150">Actions</th>
+                                <th width="150">Batch</th>
+                                <th width="180">Actions</th>
                             </tr>
                         </thead>
                         <tbody>';
@@ -75,6 +79,9 @@ try {
             $createdDate = $class['created_at'] 
                 ? date('M d, Y', strtotime($class['created_at']))
                 : 'N/A';
+            
+            $batchYear = $class['batch_year'] ?? date('Y');
+            $subjectCount = $class['subject_count'] ?? 0;
             
             echo '<tr>
                     <td><span class="badge bg-dark">#' . $class['class_id'] . '</span></td>
@@ -89,35 +96,61 @@ try {
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="badge bg-primary rounded-pill me-2">
-                                <i class="bi bi-people"></i>
+                                <i class="bi bi-people"></i> ' . $class['student_count'] . '
                             </span>
-                            <span class="fw-semibold">' . $class['student_count'] . ' students</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success rounded-pill me-2">
+                                <i class="bi bi-book"></i> ' . $subjectCount . '
+                            </span>
+                            <span class="text-muted small">subjects</span>
                         </div>
                     </td>
                     <td>' . $statusBadge . '</td>
                     <td>
-                        <small class="text-muted">' . $createdDate . '</small>
+                        <small class="text-muted">' . $batchYear . '</small>
                     </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewClassStudents(' . $class['class_id'] . ')" title="View Students">
-                            <i class="bi bi-people"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="viewClassDetails(' . $class['class_id'] . ')" title="Class Details">
-                            <i class="bi bi-eye"></i>
-                        </button>
+                    <td>  
+                        <div class="btn-group btn-group-sm" role="group">
+                            <!-- View Students Button -->
+                            <button class="btn btn-outline-primary" 
+                                    onclick="window.location.href=\'teacher_my_students.php?class_id=' . $class['class_id'] . '\'" 
+                                    title="View Students">
+                                <i class="bi bi-people"></i>
+                            </button>
+                            
+                            <!-- Class Details Button -->
+                            <button class="btn btn-outline-success" 
+                                    onclick="viewClassDetails(' . $class['class_id'] . ')" 
+                                    title="Class Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            
+                            <!-- 📊 PERFORMANCE BUTTON - WITH MODAL -->
+                            <button class="btn btn-outline-info" 
+                                    onclick="viewClassPerformanceModal(' . $class['class_id'] . ', \'' . $class['faculty'] . ' - Sem ' . $class['semester'] . '\')" 
+                                    title="View Performance">
+                                <i class="bi bi-bar-chart-fill"></i>
+                            </button>
+                        </div>
                     </td>
                   </tr>';
         }
         
-        echo '</tbody></table></div></div>';
+        echo '</tbody>
+                    </table>
+                </div>
+            </div>';
         
         // Add summary at bottom
         echo '<div class="alert alert-info mt-3">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-info-circle me-2 fs-4"></i>
                     <div>
-                        <h6 class="mb-1">Quick Actions</h6>
-                        <p class="mb-0 small">Click on action buttons to view students or class details. You can manage students from the "My Students" section.</p>
+                        <h6 class="mb-1">Your Assigned Subjects</h6>
+                        <p class="mb-0 small">These are the classes where you have been assigned to teach specific subjects.</p>
                     </div>
                 </div>
               </div>';

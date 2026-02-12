@@ -41,10 +41,10 @@ try {
     
     // Get subjects for this class (faculty and semester)
     $subject_sql = "SELECT s.*, 
-                   (SELECT COUNT(*) FROM result WHERE subject_id = s.subject_id 
+                   (SELECT COUNT(DISTINCT student_id) FROM result WHERE subject_id = s.subject_id 
                     AND student_id IN (SELECT student_id FROM student WHERE class_id = ?)) as results_count
                    FROM subject s
-                   WHERE s.faculty_id = (SELECT faculty_id FROM faculty WHERE faculty_name = ?)
+                   WHERE s.faculty_id = (SELECT faculty_id FROM faculty WHERE faculty_code = ?)
                    AND s.semester = ?
                    AND s.status = 'active'
                    ORDER BY s.subject_name";
@@ -55,6 +55,37 @@ try {
     $subject_result = $subject_stmt->get_result();
     $subjects = $subject_result->fetch_all(MYSQLI_ASSOC);
     
+    // FIX 1: Get TOTAL subjects count for this class
+    $total_subjects_sql = "SELECT COUNT(*) as total 
+                           FROM subject s
+                           WHERE s.faculty_id = (SELECT faculty_id FROM faculty WHERE faculty_code = ?)
+                           AND s.semester = ?
+                           AND s.status = 'active'";
+    $total_subjects_stmt = $connection->prepare($total_subjects_sql);
+    $total_subjects_stmt->bind_param("si", $class_data['faculty'], $class_data['semester']);
+    $total_subjects_stmt->execute();
+    $total_subjects_result = $total_subjects_stmt->get_result();
+    $total_subjects = $total_subjects_result->fetch_assoc()['total'];
+    
+    // FIX 2: Get subjects that HAVE MARKS for this class
+    $subjects_with_marks_sql = "SELECT COUNT(DISTINCT r.subject_id) as count 
+                                FROM result r
+                                JOIN student s ON r.student_id = s.student_id
+                                WHERE s.class_id = ?
+                                AND r.verification_status IN ('pending', 'verified')";
+                                
+    $subjects_with_marks_stmt = $connection->prepare($subjects_with_marks_sql);
+    $subjects_with_marks_stmt->bind_param("i", $class_id);
+    $subjects_with_marks_stmt->execute();
+    $subjects_with_marks_result = $subjects_with_marks_stmt->get_result();
+    $subjects_with_marks = $subjects_with_marks_result->fetch_assoc()['count'];
+    
+    // FIX 3: Calculate class progress based on SUBJECTS, not students
+    $class_progress = $total_subjects > 0 ? round(($subjects_with_marks / $total_subjects) * 100) : 0;
+    
+    // DEBUG: Log the values to see what's happening
+error_log("Class ID: $class_id, Total Subjects: $total_subjects, Subjects with Marks: $subjects_with_marks, Progress: $class_progress%");
+
     // Get recent results for this class
     $results_sql = "SELECT r.*, s.student_name, sub.subject_name,
                DATE_FORMAT(r.published_date, '%b %d, %Y') as result_date
@@ -126,7 +157,7 @@ try {
     echo '<div class="card-body">';
     echo '<div class="text-center mb-3">';
     echo '<i class="bi bi-book display-4 text-success mb-2"></i>';
-    echo '<h5>' . count($subjects) . ' Subjects</h5>';
+    echo '<h5>' . $total_subjects . ' Subjects</h5>';
     echo '</div>';
     
     echo '<div class="list-group">';
@@ -137,8 +168,10 @@ try {
     
     echo '<div class="list-group-item d-flex justify-content-between">';
     echo '<span><i class="bi bi-book text-success me-2"></i>Total Subjects</span>';
-    echo '<span class="badge bg-success rounded-pill">' . count($subjects) . '</span>';
+    echo '<span class="badge bg-success rounded-pill">' . $total_subjects . '</span>';
     echo '</div>';
+    
+
     
     echo '<div class="list-group-item d-flex justify-content-between">';
     echo '<span><i class="bi bi-trophy text-warning me-2"></i>Results Entered</span>';
@@ -156,55 +189,94 @@ try {
     echo '</div>';
     
     // Subjects section
-    if (!empty($subjects)) {
-        echo '<div class="card mb-4">';
-        echo '<div class="card-header bg-info text-white d-flex justify-content-between align-items-center">';
-        echo '<h6 class="mb-0"><i class="bi bi-book me-2"></i> Subjects (' . count($subjects) . ')</h6>';
-        echo '<button class="btn btn-sm btn-light" onclick="loadAddResultForm()">';
-        echo '<i class="bi bi-trophy me-1"></i> Enter Marks</button>';
-        echo '</div>';
-        echo '<div class="card-body">';
-        echo '<div class="row">';
+if (!empty($subjects)) {
+    echo '<div class="card mb-4">';
+    echo '<div class="card-header bg-info text-white d-flex justify-content-between align-items-center">';
+    echo '<h6 class="mb-0"><i class="bi bi-book me-2"></i> Subjects (' . $total_subjects . ')</h6>';
+    echo '<button class="btn btn-sm btn-light" onclick="loadAddResultForm()">';
+    echo '<i class="bi bi-trophy me-1"></i> Enter Marks</button>';
+    echo '</div>';
+    echo '<div class="card-body">';
+    echo '<div class="row">';
+    
+    foreach ($subjects as $subject) {
+        // Calculate student completion percentage
+        $results_percent = $class_data['student_count'] > 0 
+            ? round(($subject['results_count'] / $class_data['student_count']) * 100) 
+            : 0;
         
-        foreach ($subjects as $subject) {
-            $results_percent = $class_data['student_count'] > 0 
-                ? round(($subject['results_count'] / $class_data['student_count']) * 100) 
-                : 0;
-            
-            echo '<div class="col-md-4 mb-3">';
-            echo '<div class="card h-100 border-' . ($results_percent == 100 ? 'success' : ($results_percent > 0 ? 'warning' : 'secondary')) . '">';
-            echo '<div class="card-body">';
-            echo '<h6 class="card-title">' . htmlspecialchars($subject['subject_name']) . '</h6>';
-            echo '<p class="card-text small text-muted mb-2">';
-            echo '<span class="badge bg-secondary">' . htmlspecialchars($subject['subject_code']) . '</span>';
-            if ($subject['is_elective']) {
-                echo ' <span class="badge bg-info">Elective</span>';
-            }
-            echo '</p>';
-            
-            echo '<div class="mb-2">';
-            echo '<small class="text-muted">Marks Entry Progress</small>';
-            echo '<div class="progress" style="height: 6px;">';
-            echo '<div class="progress-bar bg-' . ($results_percent == 100 ? 'success' : ($results_percent > 0 ? 'warning' : 'secondary')) . '" 
-                 role="progressbar" style="width: ' . $results_percent . '%"></div>';
-            echo '</div>';
-            echo '<small class="text-muted">' . $subject['results_count'] . ' of ' . $class_data['student_count'] . ' students</small>';
-            echo '</div>';
-            
-            echo '<div class="d-flex justify-content-between">';
-            echo '<small><i class="bi bi-journal-text me-1"></i>' . $subject['credits'] . ' Credits</small>';
-            echo '<button class="btn btn-sm btn-outline-primary" onclick="enterSubjectMarks(' . $class_id . ', ' . $subject['subject_id'] . ')">';
-            echo '<i class="bi bi-pencil"></i></button>';
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
+        // Determine status
+        if ($results_percent == 100) {
+            $status_badge = '<span class="badge bg-success">Complete</span>';
+            $border_color = 'success';
+            $progress_color = 'success';
+        } else if ($results_percent > 0) {
+            $status_badge = '<span class="badge bg-warning text-dark">Partial</span>';
+            $border_color = 'warning';
+            $progress_color = 'warning';
+        } else {
+            $status_badge = '<span class="badge bg-secondary">Not Started</span>';
+            $border_color = 'secondary';
+            $progress_color = 'secondary';
         }
         
+        echo '<div class="col-md-4 mb-3">';
+        echo '<div class="card h-100 border-' . $border_color . '">';
+        echo '<div class="card-body">';
+        echo '<div class="d-flex justify-content-between align-items-start mb-2">';
+        echo '<h6 class="card-title mb-0">' . htmlspecialchars($subject['subject_name']) . '</h6>';
+        echo $status_badge;
+        echo '</div>';
+        
+        echo '<p class="card-text small text-muted mb-2">';
+        echo '<span class="badge bg-secondary">' . htmlspecialchars($subject['subject_code']) . '</span>';
+        if ($subject['is_elective']) {
+            echo ' <span class="badge bg-info">Elective</span>';
+        }
+        if ($subject['credits']) {
+            echo ' <span class="badge bg-light text-dark">' . $subject['credits'] . ' cr</span>';
+        }
+        echo '</p>';
+        
+        echo '<div class="mb-2">';
+        echo '<div class="d-flex justify-content-between align-items-center mb-1">';
+        echo '<small class="text-muted">Student Completion</small>';
+        echo '<small class="fw-bold text-' . $progress_color . '">' . $results_percent . '%</small>';
+        echo '</div>';
+        
+        echo '<div class="progress" style="height: 8px;">';
+        echo '<div class="progress-bar bg-' . $progress_color . '" 
+              role="progressbar" style="width: ' . $results_percent . '%" 
+              aria-valuenow="' . $results_percent . '" aria-valuemin="0" aria-valuemax="100"></div>';
+        echo '</div>';
+        
+        echo '<div class="d-flex justify-content-between mt-1">';
+        echo '<small class="text-muted">' . $subject['results_count'] . ' of ' . $class_data['student_count'] . ' students</small>';
+        
+        // Show missing students count if partial
+        if ($results_percent > 0 && $results_percent < 100) {
+            $missing = $class_data['student_count'] - $subject['results_count'];
+            echo '<small class="text-danger">' . $missing . ' missing</small>';
+        } else if ($results_percent == 0) {
+            echo '<small class="text-muted">No entries</small>';
+        }
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="d-flex justify-content-between mt-3">';
+        echo '<small><i class="bi bi-journal-text me-1"></i>' . $subject['credits'] . ' Credits</small>';
+        echo '<button class="btn btn-sm btn-outline-primary" onclick="enterSubjectMarks(' . $class_id . ', ' . $subject['subject_id'] . ')">';
+        echo '<i class="bi bi-pencil"></i> Enter</button>';
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';
     }
+    
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
+}
     
     // Recent results section
     if (!empty($recent_results)) {

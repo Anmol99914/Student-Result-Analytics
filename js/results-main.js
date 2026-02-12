@@ -3,7 +3,8 @@
  * File: js/results-main.js
  */
 
-const ResultsSystem = (function() {
+// ✅ GUARANTEED GLOBAL - Always accessible from onclick
+window.ResultsSystem = window.ResultsSystem || (function() {
     'use strict';
     
     // Private variables
@@ -20,7 +21,7 @@ const ResultsSystem = (function() {
         alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
         alertDiv.innerHTML = `
             ${message}
-            <button type="button" clfass="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         
         if (container) {
@@ -159,27 +160,25 @@ const ResultsSystem = (function() {
         },
         
         // Bind click events to subject buttons
-bindSubjectEvents: function() {
-    // Single button for all actions
-    document.querySelectorAll('.enter-marks-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const classId = button.getAttribute('data-class-id');
-            const subjectId = button.getAttribute('data-subject-id');
-            const subjectName = button.getAttribute('data-subject-name');
-            const faculty = button.getAttribute('data-faculty');
-            const semester = button.getAttribute('data-semester');
+        bindSubjectEvents: function() {
+            document.querySelectorAll('.enter-marks-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const classId = button.getAttribute('data-class-id');
+                    const subjectId = button.getAttribute('data-subject-id');
+                    const subjectName = button.getAttribute('data-subject-name');
+                    const faculty = button.getAttribute('data-faculty');
+                    const semester = button.getAttribute('data-semester');
+                    
+                    const buttonText = button.textContent;
+                    const hasExistingMarks = buttonText.includes('View/Edit');
+                    
+                    log(`${hasExistingMarks ? 'View/Edit' : 'Enter'} marks for:`, { subjectName });
+                    this.loadMarksEntryForm(classId, subjectId, subjectName, faculty, semester, hasExistingMarks);
+                });
+            });
             
-            // Check button text to see if marks exist
-            const buttonText = button.textContent;
-            const hasExistingMarks = buttonText.includes('View/Edit');
-            
-            log(`${hasExistingMarks ? 'View/Edit' : 'Enter'} marks for:`, { subjectName });
-            this.loadMarksEntryForm(classId, subjectId, subjectName, faculty, semester, hasExistingMarks);
-        });
-    });
-    
-    log('Bound events to', document.querySelectorAll('.enter-marks-btn').length, 'subject buttons');
-},
+            log('Bound events to', document.querySelectorAll('.enter-marks-btn').length, 'subject buttons');
+        },
         
         // Load marks entry form
         loadMarksEntryForm: function(classId, subjectId, subjectName, faculty, semester, isViewMode = false) {
@@ -226,7 +225,6 @@ bindSubjectEvents: function() {
                     if (marksContainer) {
                         marksContainer.innerHTML = html;
                         
-                        // Initialize marks system after content loads
                         setTimeout(() => {
                             if (typeof ResultsMarks !== 'undefined' && typeof ResultsMarks.init === 'function') {
                                 ResultsMarks.init();
@@ -251,39 +249,27 @@ bindSubjectEvents: function() {
                 });
         },
 
-        // Add this to the ResultsSystem object:
         manualInit: function() {
             console.log('ResultsSystem.manualInit called');
             this.init();
         },
         
-        // Test function
         test: function() {
             alert('ResultsSystem is working!\nTeacher: ' + teacherName);
         }
     };
 })();
 
-// Initialize when DOM is ready and we're on results page
+console.log('✅ ResultsSystem ready - Global:', !!window.ResultsSystem);
+
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM ready, checking for results page...');
     
     if (document.getElementById('classes-container')) {
         console.log('Initializing ResultsSystem...');
-        ResultsSystem.init();
+        if (window.ResultsSystem && typeof window.ResultsSystem.init === 'function') {
+            window.ResultsSystem.init();
+        }
     }
 });
-
-// Export to window
-window.ResultsSystem = ResultsSystem;
-
-// Add at the end of results-main.js:
-// Global initialization trigger
-window.initializeResultsSystem = function() {
-    console.log('Manual initialization triggered');
-    if (typeof ResultsSystem !== 'undefined' && typeof ResultsSystem.init === 'function') {
-        ResultsSystem.init();
-    } else {
-        console.error('Cannot initialize: ResultsSystem not found');
-    }
-};

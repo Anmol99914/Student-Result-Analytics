@@ -96,6 +96,7 @@ $teacher_name = $_SESSION['teacher_name'];
                             <span>Enter Results</span>
                         </a>
                     </li>
+                
                     <li class="nav-item">
                         <a href="#" onclick="loadProfile(); return false;" class="nav-link">
                             <i class="bi bi-person"></i>

@@ -145,7 +145,6 @@ $pending_count = $pending_result->fetch_assoc()['count'];
         </div>
     </div>
 </div>
-<?php include 'get_pending_results.php'; ?>
 
 <script>
     // Add at the TOP of your script
@@ -201,13 +200,88 @@ function verifyResult(resultId) {
 }
 
 // Reject result
+// Reject result - FIXED VERSION
 function rejectResult(resultId) {
     console.log('❌ Rejecting result:', resultId);
     
     const reason = prompt('Enter rejection reason (optional):');
-    if (reason !== null) {
-        updateVerificationStatus(resultId, 'rejected', reason);
+    
+    // ✅ If user cancels prompt, do nothing
+    if (reason === null) {
+        return;
     }
+    
+    // Show loading on button
+    const btn = document.querySelector(`[onclick*="rejectResult(${resultId})"]`);
+    if (btn) {
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+        
+        // Store original HTML to restore later
+        btn.dataset.originalHtml = originalHTML;
+    }
+    
+    fetch('Results/update_verification.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'result_id=' + resultId + '&status=rejected&reason=' + encodeURIComponent(reason)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Reject response:', data);
+        
+        // Restore button
+        if (btn) {
+            btn.innerHTML = btn.dataset.originalHtml || '<i class="bi bi-x"></i>';
+            btn.disabled = false;
+        }
+        
+        if (data.success) {
+            // Show ONE alert - this is the only one!
+            alert('Result rejected!');
+            
+            // Remove the row
+            const row = document.querySelector(`tr[data-result-id="${resultId}"]`);
+            if (row) {
+                row.style.transition = 'all 0.3s';
+                row.style.opacity = '0';
+                setTimeout(() => {
+                    row.remove();
+                    
+                    // Update counters
+                    if (typeof updateCounters === 'function') {
+                        updateCounters();
+                    }
+                    
+                    // Check if table is empty
+                    const tbody = document.querySelector('#pending-results-table tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <i class="bi bi-check-circle display-4 text-success"></i>
+                                    <h5 class="mt-3">All pending results verified!</h5>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }, 300);
+            }
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to reject result');
+        
+        // Restore button on error
+        if (btn) {
+            btn.innerHTML = btn.dataset.originalHtml || '<i class="bi bi-x"></i>';
+            btn.disabled = false;
+        }
+    });
 }
 
 // ===== MAIN UPDATE FUNCTION =====

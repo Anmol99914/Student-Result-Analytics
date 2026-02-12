@@ -80,7 +80,5 @@ setTimeout(function() {
 </script>
 
 <!-- Load JavaScript files -->
-<!-- <script src="../../../../js/results-main.js"></script>
-<script src="../../../../js/results-marks.js"></script> -->
-<!-- <script src="/Student_result_analytics/js/results-main.js"></script>
-<script src="/Student_result_analytics/js/results-marks.js"></script> -->
+<script src="/Student_Result_Analytics/js/results-main.js"></script>
+<script src="/Student_Result_Analytics/js/results-marks.js"></script>

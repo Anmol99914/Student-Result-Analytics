@@ -1,11 +1,9 @@
 <?php
 session_start();
-// Add at the VERY TOP of each PHP file
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+header("Cache-Control: no-cache, must-revalidate");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 require_once '../../../config.php';
-// Also add MySQL query that doesn't use cache
 $connection->query("SET SESSION query_cache_type = OFF");
 
 if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != true) {
@@ -15,20 +13,20 @@ if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != 
 
 $teacher_id = $_SESSION['teacher_id'];
 
-// Get classes assigned to this teacher
-$sql = "SELECT 
+$sql = "SELECT DISTINCT 
             c.class_id, 
             c.faculty, 
             c.semester, 
             c.status,
-            (SELECT COUNT(*) FROM student WHERE class_id = c.class_id) as student_count,
-            (SELECT COUNT(DISTINCT r.student_id) FROM result r 
-             JOIN student s ON r.student_id = s.student_id 
-             WHERE s.class_id = c.class_id 
-             AND r.entered_by_teacher_id = ?) as results_entered
+            (SELECT COUNT(*) FROM student WHERE class_id = c.class_id AND is_active = 1) as student_count,
+            (SELECT COUNT(DISTINCT tsa.subject_id) 
+             FROM teacher_subject_assignment tsa 
+             WHERE tsa.class_id = c.class_id 
+             AND tsa.teacher_id = ?) as subjects_assigned
         FROM class c
-        INNER JOIN teacher_class_assignments tca ON c.class_id = tca.class_id
-        WHERE tca.teacher_id = ?
+        INNER JOIN teacher_subject_assignment tsa ON c.class_id = tsa.class_id
+        WHERE tsa.teacher_id = ?
+        AND c.status = 'active'
         ORDER BY c.faculty, c.semester";
 
 $stmt = $connection->prepare($sql);
@@ -41,7 +39,7 @@ if (empty($classes)) {
     echo '<div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle"></i>
             No classes assigned to you yet.
-            <br><small>Contact admin to get classes assigned.</small>
+            <br><small>Contact admin to get subjects assigned to you.</small>
           </div>';
     return;
 }
@@ -53,15 +51,11 @@ echo '</div>';
 
 foreach ($classes as $class) {
     $student_count = intval($class['student_count']);
-    $results_entered = intval($class['results_entered']);
+    $subjects_assigned = intval($class['subjects_assigned']);
+    $total_subjects = 5; // Default for BCA/BBM/BIM Semester 1
     
-    // Calculate progress percentage
-    if ($student_count <= 0) {
-        $student_count = 0;
-        $results_percent = 0;
-    } else {
-        $results_percent = min(100, round(($results_entered / $student_count) * 100));
-    }
+    // Calculate progress based on subjects completed
+    $results_percent = $total_subjects > 0 ? round(($subjects_assigned / $total_subjects) * 100) : 0;
     
     echo '<div class="col-md-4 mb-4">';
     echo '<div class="card class-card h-100" 
@@ -78,15 +72,15 @@ foreach ($classes as $class) {
     // Progress
     echo '<div class="mb-3">';
     echo '<div class="d-flex justify-content-between mb-1">';
-    echo '<small class="text-muted">Results Progress</small>';
-    echo '<small class="text-muted">' . $results_percent . '%</small>';
+    echo '<small class="text-muted">Subjects Progress</small>';
+    echo '<small class="text-muted">' . $subjects_assigned . '/' . $total_subjects . ' subjects</small>';
     echo '</div>';
     echo '<div class="progress" style="height: 6px;">';
     echo '<div class="progress-bar ' . ($results_percent == 100 ? 'bg-success' : ($results_percent > 0 ? 'bg-warning' : 'bg-secondary')) . '" 
           style="width: ' . $results_percent . '%"></div>';
     echo '</div>';
     echo '<small class="text-muted d-block mt-1">';
-    echo $results_entered . ' of ' . $student_count . ' students';
+    echo 'You teach ' . $subjects_assigned . ' subjects in this class';
     echo '</small>';
     echo '</div>';
     
