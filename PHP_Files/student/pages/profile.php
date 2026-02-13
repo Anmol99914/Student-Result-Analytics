@@ -170,55 +170,6 @@ $created_date = date('d M Y', strtotime($student['created_at']));
             </div>
         </div>
     </div>
-    
-    <!-- Additional Info -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle text-info me-2"></i>
-                        Additional Information
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card border-info">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-calendar-check fs-1 text-info mb-3"></i>
-                                    <h5>Attendance</h5>
-                                    <div class="display-4 fw-bold text-info">85%</div>
-                                    <small class="text-muted">Overall Attendance Rate</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card border-success">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-graph-up fs-1 text-success mb-3"></i>
-                                    <h5>Performance</h5>
-                                    <div class="display-4 fw-bold text-success">3.8</div>
-                                    <small class="text-muted">Current GPA</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card border-primary">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-cash-coin fs-1 text-primary mb-3"></i>
-                                    <h5>Fee Status</h5>
-                                    <div class="display-4 fw-bold text-primary">Paid</div>
-                                    <small class="text-muted">Last payment: 15 Nov 2024</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
 // Email copy functionality

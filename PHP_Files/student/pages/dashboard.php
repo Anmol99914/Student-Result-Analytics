@@ -41,35 +41,54 @@ window.loadPage = window.loadPage || function(url) {
     const mainContent = document.getElementById('main-content');
     if (!mainContent) return;
     
+    // Show loading
     mainContent.innerHTML = `
         <div class="text-center py-5">
             <div class="spinner-border text-primary"></div>
             <p class="mt-2">Loading...</p>
         </div>
     `;
-    
+
     fetch(url)
         .then(response => response.text())
         .then(html => {
-            mainContent.innerHTML = html;
+            // Create a temporary container
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
             
-            // Execute scripts
-            const scripts = mainContent.querySelectorAll('script');
+            // Extract all script tags
+            const scripts = temp.querySelectorAll('script');
+            
+            // Remove scripts from HTML to prevent double execution
+            scripts.forEach(script => script.remove());
+            
+            // Set the HTML (without scripts)
+            mainContent.innerHTML = temp.innerHTML;
+            
+            // Now execute scripts one by one
             scripts.forEach(script => {
                 if (script.src) {
+                    // External script
                     const newScript = document.createElement('script');
                     newScript.src = script.src;
+                    newScript.async = false;
                     document.head.appendChild(newScript);
-                } else if (script.textContent) {
+                    console.log('Loaded external script:', script.src);
+                } else {
+                    // Inline script
                     try {
                         eval(script.textContent);
+                        console.log('Executed inline script');
                     } catch (e) {
-                        console.error('Script error:', e);
+                        console.error('Script execution error:', e);
                     }
                 }
             });
+            
+            console.log('✅ Page loaded:', url);
         })
         .catch(error => {
+            console.error('Fetch error:', error);
             mainContent.innerHTML = `
                 <div class="alert alert-danger">
                     Error loading page: ${error.message}
@@ -95,6 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 });
+
+
 </script>
 
 <!-- Simple Navbar -->

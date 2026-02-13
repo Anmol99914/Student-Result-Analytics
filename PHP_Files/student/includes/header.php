@@ -9,7 +9,9 @@
     <title><?php echo $page_title ?? 'Student Result Analytics | Student'; ?></title>
     
     <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+      -->
+    <link rel="stylesheet" href="/Student_Result_Analytics/css/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     
     <!-- Student Common CSS -->
@@ -21,7 +23,9 @@
     <?php endif; ?>
     
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+    <script src="/Student_Result_Analytics/js/jquery.min.js"></script>
+
     
     <style>
         /* Inline styles for critical layout */

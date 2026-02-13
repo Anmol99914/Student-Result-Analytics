@@ -132,6 +132,17 @@ include(__DIR__ . '/../../../config.php');
                                 <span>Manage Subjects</span>
                             </a>
                         </div>
+                        <div class="col-12 mt-3">
+                        <div class="row g-3">
+                            <div class="col-md-4 offset-md-4">
+                                <a href="export_results.php" 
+                                   class="btn btn-success w-100 d-flex flex-column align-items-center py-3">
+                                    <i class="bi bi-download fs-2 mb-2"></i>
+                                    <span>Export Results (Excel/PDF)</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
