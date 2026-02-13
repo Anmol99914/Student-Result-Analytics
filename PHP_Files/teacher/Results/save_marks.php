@@ -27,9 +27,49 @@ $subject_id = isset($_POST['subject_id']) ? intval($_POST['subject_id']) : 0;
 $teacher_id = isset($_POST['teacher_id']) ? intval($_POST['teacher_id']) : $_SESSION['teacher_id'];
 $marks = isset($_POST['marks']) ? $_POST['marks'] : [];
 
+error_log("========== SAVE MARKS DEBUG ==========");
+error_log("Class ID: " . $class_id);
+error_log("Subject ID: " . $subject_id);
+error_log("Teacher ID: " . $teacher_id);
+error_log("Raw marks received: " . print_r($marks, true));
+
 if (!$class_id || !$subject_id || empty($marks)) {
     ob_clean();
     echo json_encode(['success' => false, 'message' => 'Invalid data: Missing class, subject or marks']);
+    ob_end_flush();
+    exit();
+}
+
+// ===== FIX 1: Get valid students for this class =====
+$valid_students_sql = "SELECT student_id FROM student WHERE class_id = ? AND is_active = 1";
+$valid_stmt = $connection->prepare($valid_students_sql);
+$valid_stmt->bind_param("i", $class_id);
+$valid_stmt->execute();
+$valid_result = $valid_stmt->get_result();
+
+$valid_student_ids = [];
+while($row = $valid_result->fetch_assoc()) {
+    $valid_student_ids[] = $row['student_id'];
+}
+
+error_log("Valid students in class $class_id: " . implode(', ', $valid_student_ids));
+
+// ===== FIX 2: Filter marks to only include valid students =====
+$filtered_marks = [];
+foreach ($marks as $student_id => $marks_obtained) {
+    if (in_array($student_id, $valid_student_ids)) {
+        $filtered_marks[$student_id] = $marks_obtained;
+    } else {
+        error_log("⚠️ Skipping invalid student $student_id - not in class $class_id");
+    }
+}
+
+$marks = $filtered_marks;
+error_log("Filtered marks: " . print_r($marks, true));
+
+if (empty($marks)) {
+    ob_clean();
+    echo json_encode(['success' => false, 'message' => 'No valid students selected for this class']);
     ob_end_flush();
     exit();
 }
@@ -69,7 +109,7 @@ foreach ($marks as $student_id => $marks_obtained) {
     $percentage = ($marks_obtained / $total_marks) * 100;
     $grade = calculateGrade($percentage);
     
-    // 🔥 CRITICAL FIX 1: Check if this student has ANY verified marks for this subject
+    // ===== FIX 3: Check if student has verified marks =====
     $check_verified_sql = "SELECT result_id FROM result 
                           WHERE student_id = ? AND subject_id = ? 
                           AND verification_status = 'verified'
@@ -79,7 +119,6 @@ foreach ($marks as $student_id => $marks_obtained) {
     $check_verified_stmt->execute();
     $verified_exists = $check_verified_stmt->get_result()->fetch_assoc();
     
-    // 🚨 If verified marks exist - ABSOLUTELY NO INSERT OR UPDATE ALLOWED
     if ($verified_exists) {
         $verified_skipped[] = $student_id;
         $skipped_count++;
@@ -87,7 +126,7 @@ foreach ($marks as $student_id => $marks_obtained) {
         continue;
     }
     
-    // Check existing result (only non-verified)
+    // ===== FIX 4: Check for existing pending result =====
     $check_sql = "SELECT result_id, verification_status FROM result 
                   WHERE student_id = ? AND subject_id = ? AND class_id = ? 
                   AND verification_status != 'verified'";
@@ -97,7 +136,7 @@ foreach ($marks as $student_id => $marks_obtained) {
     $existing = $check_stmt->get_result()->fetch_assoc();
     
     if ($existing) {
-        // Update existing pending/draft result
+        // Update existing pending result
         $update_sql = "UPDATE result SET 
                       marks_obtained = ?, 
                       total_marks = ?, 
@@ -117,22 +156,24 @@ foreach ($marks as $student_id => $marks_obtained) {
         }
         
         $update_stmt->bind_param("dddsi", 
-            $marks_obtained,  // d - double
-            $total_marks,     // d - double
-            $percentage,      // d - double
-            $grade,          // s - string
-            $existing['result_id'] // i - integer
+            $marks_obtained, 
+            $total_marks,     
+            $percentage,      
+            $grade,          
+            $existing['result_id']
         );
         
         if ($update_stmt->execute()) {
             $success_count++;
             $updated_count++;
+            error_log("✅ Updated marks for $student_id: $marks_obtained");
         } else {
             $error_count++;
             $errors[] = "Student $student_id: " . $update_stmt->error;
+            error_log("❌ Update failed for $student_id: " . $update_stmt->error);
         }
     } else {
-        // ✅ SAFE: No verified marks exist, no pending record exists - insert new
+        // Insert new result
         $insert_sql = "INSERT INTO result (
             student_id, subject_id, marks_obtained, total_marks, 
             percentage, grade, semester_id, entered_by_teacher_id, 
@@ -147,28 +188,29 @@ foreach ($marks as $student_id => $marks_obtained) {
         }
         
         $insert_stmt->bind_param("sidddsiii", 
-            $student_id,      // s - string
-            $subject_id,      // i - integer
-            $marks_obtained,  // d - double
-            $total_marks,     // d - double
-            $percentage,      // d - double
-            $grade,          // s - string
-            $semester_id,    // i - integer
-            $teacher_id,     // i - integer
-            $class_id        // i - integer
+            $student_id,      
+            $subject_id,      
+            $marks_obtained,  
+            $total_marks,     
+            $percentage,      
+            $grade,          
+            $semester_id,    
+            $teacher_id,     
+            $class_id        
         );
         
         if ($insert_stmt->execute()) {
             $success_count++;
             $inserted_count++;
+            error_log("✅ Inserted marks for $student_id: $marks_obtained");
         } else {
             $error_count++;
             $errors[] = "Student $student_id: " . $insert_stmt->error;
+            error_log("❌ Insert failed for $student_id: " . $insert_stmt->error);
         }
     }
 }
 
-// ALWAYS return JSON
 ob_clean();
 
 $response = [
@@ -179,7 +221,8 @@ $response = [
         'inserted' => $inserted_count,
         'updated' => $updated_count,
         'skipped' => $skipped_count,
-        'errors' => $error_count
+        'errors' => $error_count,
+        'verified_skipped' => count($verified_skipped)
     ]
 ];
 

@@ -13,79 +13,112 @@ $student_name = $_SESSION['student_name'] ?? 'Student';
 $student_id = $_SESSION['student_username'] ?? '';
 ?>
 
-<!-- script to load home page immediately -->
+<!-- ===== PRINT FUNCTION ===== -->
 <script>
+window.printResults = function() {
+    console.log('Print called');
+    
+    // Hide buttons temporarily
+    const buttons = document.querySelectorAll('.btn, .card-header .btn, .d-flex.gap-2');
+    buttons.forEach(btn => btn.style.display = 'none');
+    
+    // Print
+    window.print();
+    
+    // Restore buttons
+    setTimeout(() => {
+        buttons.forEach(btn => btn.style.display = '');
+    }, 500);
+    
+    return false;
+};
+
+console.log('Print function loaded');
+
+// Make sure loadPage function exists
+window.loadPage = window.loadPage || function(url) {
+    console.log('Loading page:', url);
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+    
+    mainContent.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2">Loading...</p>
+        </div>
+    `;
+    
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            mainContent.innerHTML = html;
+            
+            // Execute scripts
+            const scripts = mainContent.querySelectorAll('script');
+            scripts.forEach(script => {
+                if (script.src) {
+                    const newScript = document.createElement('script');
+                    newScript.src = script.src;
+                    document.head.appendChild(newScript);
+                } else if (script.textContent) {
+                    try {
+                        eval(script.textContent);
+                    } catch (e) {
+                        console.error('Script error:', e);
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            mainContent.innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading page: ${error.message}
+                </div>
+            `;
+        });
+};
+
+// Load home page automatically
 document.addEventListener('DOMContentLoaded', function() {
-    // Load home page immediately if main content is empty
     setTimeout(function() {
         const mainContent = document.getElementById('main-content');
         if (mainContent && mainContent.innerHTML.includes('Loading')) {
-            // Simulate click on home link
-            const homeLink = document.querySelector('a[href="../pages/home.php"]');
-            if (homeLink) {
-                homeLink.click();
-            } else {
-                // Direct load
-                loadPage('../pages/home.php');
-            }
+            loadPage('../pages/home.php');
+            
+            // Set active link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '../pages/home.php') {
+                    link.classList.add('active');
+                }
+            });
         }
     }, 100);
 });
 </script>
 
-<!-- Navbar -->
-<nav class="navbar navbar-light bg-light border-bottom sticky-top">
+<!-- Simple Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
     <div class="container-fluid">
-        <!-- Mobile Toggle -->
-        <button class="btn btn-outline-secondary d-lg-none me-2" type="button" 
-                data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
-            <i class="bi bi-list"></i>
-        </button>
-        
-        <!-- Brand -->
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
-            <i class="bi bi-mortarboard-fill text-primary me-2"></i>
-            <span class="d-none d-md-inline">Student Portal</span>
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="bi bi-mortarboard-fill me-2"></i>
+            Student Portal
         </a>
         
-        <!-- Right Side -->
-        <div class="d-flex align-items-center">
-            <!-- Welcome -->
-            <div class="me-3 d-none d-md-block">
-                <small class="text-muted">Welcome,</small>
-                <span class="fw-semibold"><?php echo htmlspecialchars($student_name); ?></span>
-            </div>
+        <div class="ms-auto d-flex align-items-center">
+            <span class="text-white me-3">
+                <i class="bi bi-person-circle me-1"></i>
+                <?php echo htmlspecialchars($student_name); ?>
+            </span>
             
-            <!-- Notifications -->
-            <div class="dropdown me-2">
-                <button class="btn btn-outline-secondary position-relative" type="button" 
-                        data-bs-toggle="dropdown">
-                    <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        3
-                        <span class="visually-hidden">unread notifications</span>
-                    </span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><h6 class="dropdown-header">Notifications</h6></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-check-circle text-success me-2"></i>Result Published for Sem 2</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin text-warning me-2"></i>Payment Due: 15 Days</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event text-info me-2"></i>Exam Schedule Updated</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-center" href="#">View All</a></li>
-                </ul>
-            </div>
-            
-            <!-- Profile Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                <button class="btn btn-light btn-sm dropdown-toggle" type="button" 
                         data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle"></i>
+                    <i class="bi bi-gear"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><h6 class="dropdown-header"><?php echo htmlspecialchars($student_id); ?></h6></li>
-                    <li><a class="dropdown-item ajax-link" href="../pages/profile.php">
-                        <i class="bi bi-person me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" href="../pages/profile.php">
+                        <i class="bi bi-person me-2"></i>Profile</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="../api/logout.php">
                         <i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
@@ -98,118 +131,40 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Main Container -->
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar (Desktop) -->
-        <div class="col-lg-2 bg-dark d-none d-lg-block min-vh-100 p-0">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 bg-dark min-vh-100 p-0">
             <div class="p-3">
-                <!-- Student Info Card -->
-                <div class="card bg-dark border-secondary mb-4">
-                    <div class="card-body text-center p-3">
-                        <div class="mb-3">
-                            <i class="bi bi-person-circle text-white fs-1"></i>
-                        </div>
-                        <h6 class="text-white mb-1"><?php echo htmlspecialchars($student_name); ?></h6>
-                        <small class="text-muted"><?php echo htmlspecialchars($student_id); ?></small>
-                    </div>
+                <!-- Student Info -->
+                <div class="text-center text-white mb-4 p-3 border-bottom border-secondary">
+                    <i class="bi bi-person-circle fs-1 mb-2"></i>
+                    <h6 class="mb-1"><?php echo htmlspecialchars($student_name); ?></h6>
+                    <small class="text-muted"><?php echo htmlspecialchars($student_id); ?></small>
                 </div>
                 
                 <!-- Navigation -->
                 <nav class="nav flex-column">
-                    <a class="nav-link text-white mb-2 ajax-link active" href="../pages/home.php">
+                    <a class="nav-link text-white mb-2" href="../pages/home.php" 
+                       onclick="loadPage(this.href); return false;">
                         <i class="bi bi-house-door me-2"></i>Dashboard
                     </a>
-                    <a class="nav-link text-white mb-2 ajax-link" href="../pages/profile.php">
+                    <a class="nav-link text-white mb-2" href="../pages/profile.php" 
+                       onclick="loadPage(this.href); return false;">
                         <i class="bi bi-person me-2"></i>My Profile
                     </a>
-                    <a class="nav-link text-white mb-2 ajax-link" href="../pages/results.php">
+                    <a class="nav-link text-white mb-2" href="../pages/results.php" 
+                       onclick="loadPage(this.href); return false;">
                         <i class="bi bi-clipboard-data me-2"></i>View Results
                     </a>
-                    <a class="nav-link text-white mb-2 ajax-link" href="../pages/payments.php">
+                    <a class="nav-link text-white mb-2" href="../pages/payments.php" 
+                       onclick="loadPage(this.href); return false;">
                         <i class="bi bi-credit-card me-2"></i>Fee Payments
                     </a>
-                    
-                    <!-- Divider -->
-                    <div class="my-3 border-top border-secondary"></div>
-                    
-                    <!-- Quick Links -->
-                    <small class="text-muted mb-2">QUICK LINKS</small>
-                    <a class="nav-link text-white mb-2" href="#" target="_blank">
-                        <i class="bi bi-calendar-event me-2"></i>Exam Schedule
-                    </a>
-                    <a class="nav-link text-white mb-2" href="#" target="_blank">
-                        <i class="bi bi-book me-2"></i>Study Materials
-                    </a>
-                    <a class="nav-link text-white mb-2" href="#" target="_blank">
-                        <i class="bi bi-question-circle me-2"></i>Help Desk
-                    </a>
-                    
-                    <!-- Logout -->
-                    <!-- <div class="mt-4 pt-3 border-top border-secondary">
-                        <a class="nav-link text-danger" href="../api/logout.php">
-                            <i class="bi bi-box-arrow-right me-2"></i>Logout
-                        </a>
-                    </div> -->
                 </nav>
             </div>
         </div>
         
-        <!-- Mobile Sidebar (Offcanvas) -->
-        <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="offcanvasSidebar">
-            <div class="offcanvas-header bg-dark text-white">
-                <h5 class="offcanvas-title">Student Portal</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-            </div>
-            <div class="offcanvas-body bg-dark p-0">
-                <!-- Same navigation as desktop sidebar -->
-                <div class="p-3">
-                    <div class="card bg-dark border-secondary mb-4">
-                        <div class="card-body text-center p-3">
-                            <div class="mb-3">
-                                <i class="bi bi-person-circle text-white fs-1"></i>
-                            </div>
-                            <h6 class="text-white mb-1"><?php echo htmlspecialchars($student_name); ?></h6>
-                            <small class="text-muted"><?php echo htmlspecialchars($student_id); ?></small>
-                        </div>
-                    </div>
-                    
-                    <nav class="nav flex-column">
-                        <a class="nav-link text-white mb-2 ajax-link" href="../pages/home.php">
-                            <i class="bi bi-house-door me-2"></i>Dashboard
-                        </a>
-                        <a class="nav-link text-white mb-2 ajax-link" href="../pages/profile.php">
-                            <i class="bi bi-person me-2"></i>My Profile
-                        </a>
-                        <a class="nav-link text-white mb-2 ajax-link" href="../pages/results.php">
-                            <i class="bi bi-clipboard-data me-2"></i>View Results
-                        </a>
-                        <a class="nav-link text-white mb-2 ajax-link" href="../pages/payments.php">
-                            <i class="bi bi-credit-card me-2"></i>Fee Payments
-                        </a>
-                        
-                        <div class="my-3 border-top border-secondary"></div>
-                        
-                        <small class="text-muted mb-2">QUICK LINKS</small>
-                        <a class="nav-link text-white mb-2" href="#">
-                            <i class="bi bi-calendar-event me-2"></i>Exam Schedule
-                        </a>
-                        <a class="nav-link text-white mb-2" href="#">
-                            <i class="bi bi-book me-2"></i>Study Materials
-                        </a>
-                        <a class="nav-link text-white mb-2" href="#">
-                            <i class="bi bi-question-circle me-2"></i>Help Desk
-                        </a>
-                        
-                        <!-- <div class="mt-4 pt-3 border-top border-secondary">
-                            <a class="nav-link text-danger" href="../api/logout.php">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a>
-                        </div> -->
-                    </nav>
-                </div>
-            </div>
-        </div>
-        
         <!-- Main Content Area -->
-        <div class="col-lg-10">
+        <div class="col-lg-10 col-md-9">
             <div id="main-content" class="p-4">
                 <!-- Content loaded via AJAX will appear here -->
                 <div class="text-center py-5">
@@ -223,11 +178,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Footer -->
             <footer class="mt-auto py-3 border-top text-center text-muted small">
                 <div class="container">
-                    <p class="mb-1">© 2025 Student Result Analytics System</p>
                     <p class="mb-0">
                         <i class="bi bi-shield-check text-success me-1"></i>
-                        Secure Student Portal • 
-                        <span class="text-primary">Last login: Today, <?php echo date('h:i A'); ?></span>
+                        Student Result Analytics System © <?php echo date('Y'); ?>
                     </p>
                 </div>
             </footer>

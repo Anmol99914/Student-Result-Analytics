@@ -36,15 +36,29 @@ $result_stmt->execute();
 $result_count = $result_stmt->get_result()->fetch_assoc()['total_results'];
 
 // Check payment status
+// Get CURRENT payment status (only latest record)
 $payment_stmt = $connection->prepare("
-    SELECT SUM(amount_paid) as total_paid, 
-           MAX(payment_date) as last_payment
+    SELECT amount_paid as total_paid, 
+           payment_date as last_payment,
+           payment_status,
+           due_amount
     FROM payment 
-    WHERE student_id = ? AND payment_status = 'Paid'
+    WHERE student_id = ? AND is_latest = 1
+    LIMIT 1
 ");
 $payment_stmt->bind_param("s", $student_id);
 $payment_stmt->execute();
 $payment = $payment_stmt->get_result()->fetch_assoc();
+
+// If no payment record exists, set defaults
+if (!$payment) {
+    $payment = [
+        'total_paid' => 0,
+        'last_payment' => null,
+        'payment_status' => 'Unpaid',
+        'due_amount' => 50000
+    ];
+}
 ?>
 
 <div class="container-fluid">
@@ -103,14 +117,22 @@ $payment = $payment_stmt->get_result()->fetch_assoc();
                         <div>
                             <h6 class="text-muted mb-2">Total Paid</h6>
                             <h2 class="mb-0">NPR <?php echo number_format($payment['total_paid'] ?? 0); ?></h2>
+                                <small class="text-muted">Status: 
+                                    <span class="badge bg-<?php 
+                                        echo $payment['payment_status'] == 'Paid' ? 'success' : 
+                                            ($payment['payment_status'] == 'Partial' ? 'warning' : 'danger'); 
+                                    ?>">
+                                        <?php echo $payment['payment_status'] ?? 'Unpaid'; ?>
+                                    </span>
+                                </small>                        
                         </div>
                         <div class="avatar bg-success bg-opacity-10 p-3 rounded">
                             <i class="bi bi-credit-card text-success fs-4"></i>
                         </div>
                     </div>
-                    <a href="../pages/payments.php" class="small text-success text-decoration-none stretched-link">
+                    <!-- <a href="../pages/payments.php" class="small text-success text-decoration-none stretched-link">
                         Payment Details <i class="bi bi-arrow-right"></i>
-                    </a>
+                    </a> -->
                 </div>
             </div>
         </div>

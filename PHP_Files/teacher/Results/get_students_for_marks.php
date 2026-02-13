@@ -52,16 +52,29 @@ if ($students_result->num_rows === 0) {
 }
 
 // Check for existing marks
-$existing_marks = [];
-$marks_sql = "SELECT student_id, marks_obtained, total_marks, percentage, grade, verification_status 
+// $existing_marks = [];
+// $marks_sql = "SELECT student_id, marks_obtained, total_marks, percentage, grade, verification_status 
+//               FROM result 
+//               WHERE subject_id = ? AND entered_by_teacher_id = ? 
+//               AND student_id IN (SELECT student_id FROM student WHERE class_id = ?)";
+
+// Get existing marks for THIS SUBJECT and THIS CLASS only - NO TEACHER FILTER!
+$marks_sql = "SELECT 
+                student_id,
+                marks_obtained,
+                grade,
+                verification_status
               FROM result 
-              WHERE subject_id = ? AND entered_by_teacher_id = ? 
-              AND student_id IN (SELECT student_id FROM student WHERE class_id = ?)";
+              WHERE subject_id = ? 
+              AND class_id = ?
+              ORDER BY student_id";
+
 $marks_stmt = $connection->prepare($marks_sql);
-$marks_stmt->bind_param("iii", $subject_id, $_SESSION['teacher_id'], $class_id);
+$marks_stmt->bind_param("ii", $subject_id, $class_id);
 $marks_stmt->execute();
 $marks_result = $marks_stmt->get_result();
 
+$existing_marks = [];
 while ($row = $marks_result->fetch_assoc()) {
     $existing_marks[$row['student_id']] = $row;
 }

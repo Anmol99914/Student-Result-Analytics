@@ -105,7 +105,7 @@ include(__DIR__ . '/../../../config.php');
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('students_list.php?action=add')" 
+                            <a href="#" onclick="loadPage('pages/manage_students.php?action=add')" 
                                class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
                                 <i class="bi bi-person-plus fs-2 mb-2"></i>
                                 <span>Add Student</span>
@@ -126,10 +126,10 @@ include(__DIR__ . '/../../../config.php');
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('assign_teachers.php')" 
+                            <a href="#" onclick="loadPage('pages/subject_management.php?action=add')" 
                                class="btn btn-outline-warning w-100 d-flex flex-column align-items-center py-3">
                                 <i class="bi bi-person-check fs-2 mb-2"></i>
-                                <span>Assign Teachers</span>
+                                <span>Manage Subjects</span>
                             </a>
                         </div>
                     </div>
@@ -188,7 +188,7 @@ include(__DIR__ . '/../../../config.php');
                         <div class="list-group-item border-0 px-0">
                             <div class="d-flex justify-content-between">
                                 <span>Academic Year:</span>
-                                <strong>2025</strong>
+                                <strong>2026</strong>
                             </div>
                         </div>
                         <div class="list-group-item border-0 px-0">
@@ -203,39 +203,19 @@ include(__DIR__ . '/../../../config.php');
                                 <strong>8</strong>
                             </div>
                         </div>
-                        <div class="list-group-item border-0 px-0">
-                            <div class="d-flex justify-content-between">
-                                <span>Database Version:</span>
-                                <strong>MySQL 10.4.32</strong>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 px-0">
-                            <div class="d-flex justify-content-between">
-                                <span>System Status:</span>
-                                <span class="badge bg-success">Operational</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle"></i>
-                        <strong>Note:</strong> All times are in server timezone.
-                    </div>
+    
+                    
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 <?php
 // Helper function for time ago (PHP 8.2+ compatible)
 function time_elapsed_string($datetime, $full = false) {
     $now = new DateTime;
     $ago = new DateTime($datetime);
     $diff = $now->diff($ago);
-
-    // Instead, calculate weeks from days
-    $weeks = floor($diff->d / 7);
-    $diff->d -= $weeks * 7;
 
     $string = array(
         'y' => 'year',
@@ -246,14 +226,8 @@ function time_elapsed_string($datetime, $full = false) {
         's' => 'second',
     );
     
-    // Add weeks if needed
-    if ($weeks > 0) {
-        $string['w'] = 'week';
-        $diff->w = $weeks;
-    }
-    
     foreach ($string as $k => &$v) {
-        if (property_exists($diff, $k) && $diff->$k) {
+        if ($diff->$k) {
             $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
         } else {
             unset($string[$k]);

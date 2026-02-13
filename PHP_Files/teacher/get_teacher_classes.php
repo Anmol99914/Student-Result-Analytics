@@ -1,12 +1,10 @@
 <?php
 session_start();
-// Add at the VERY TOP of each PHP file
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+header("Cache-Control: no-cache, must-revalidate");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 require_once '../../config.php';
 
-// Also add MySQL query that doesn't use cache
 $connection->query("SET SESSION query_cache_type = OFF");
 
 if (!isset($_SESSION['teacher_logged_in']) || $_SESSION['teacher_logged_in'] != true) {
@@ -66,7 +64,7 @@ try {
                                 <th width="150">Subjects</th>
                                 <th width="120">Status</th>
                                 <th width="150">Batch</th>
-                                <th width="180">Actions</th>
+                                <th width="120">Actions</th>
                             </tr>
                         </thead>
                         <tbody>';
@@ -83,20 +81,25 @@ try {
             $batchYear = $class['batch_year'] ?? date('Y');
             $subjectCount = $class['subject_count'] ?? 0;
             
+            $faculty_name = htmlspecialchars($class['faculty']);
+            $class_id_val = $class['class_id'];
+            $semester_val = $class['semester'];
+            $student_count_val = $class['student_count'];
+            
             echo '<tr>
-                    <td><span class="badge bg-dark">#' . $class['class_id'] . '</span></td>
+                    <td><span class="badge bg-dark">#' . $class_id_val . '</span></td>
                     <td>
-                        <div class="fw-bold">' . htmlspecialchars($class['faculty']) . '</div>
+                        <div class="fw-bold">' . $faculty_name . '</div>
                     </td>
                     <td>
                         <span class="badge bg-info text-dark">
-                            <i class="bi bi-calendar-week me-1"></i> Sem ' . $class['semester'] . '
+                            <i class="bi bi-calendar-week me-1"></i> Sem ' . $semester_val . '
                         </span>
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
                             <span class="badge bg-primary rounded-pill me-2">
-                                <i class="bi bi-people"></i> ' . $class['student_count'] . '
+                                <i class="bi bi-people"></i> ' . $student_count_val . '
                             </span>
                         </div>
                     </td>
@@ -114,23 +117,16 @@ try {
                     </td>
                     <td>  
                         <div class="btn-group btn-group-sm" role="group">
-                            <!-- View Students Button -->
-                            <button class="btn btn-outline-primary" 
-                                    onclick="window.location.href=\'teacher_my_students.php?class_id=' . $class['class_id'] . '\'" 
-                                    title="View Students">
-                                <i class="bi bi-people"></i>
-                            </button>
-                            
                             <!-- Class Details Button -->
                             <button class="btn btn-outline-success" 
-                                    onclick="viewClassDetails(' . $class['class_id'] . ')" 
+                                    onclick="viewClassDetails(' . $class_id_val . ')" 
                                     title="Class Details">
                                 <i class="bi bi-eye"></i>
                             </button>
                             
-                            <!-- 📊 PERFORMANCE BUTTON - WITH MODAL -->
+                            <!-- PERFORMANCE BUTTON - FIXED -->
                             <button class="btn btn-outline-info" 
-                                    onclick="viewClassPerformanceModal(' . $class['class_id'] . ', \'' . $class['faculty'] . ' - Sem ' . $class['semester'] . '\')" 
+                                    onclick="loadPerformancePage(' . $class_id_val . ', \'' . addslashes($faculty_name) . ' Sem ' . $semester_val . '\')" 
                                     title="View Performance">
                                 <i class="bi bi-bar-chart-fill"></i>
                             </button>
@@ -144,7 +140,6 @@ try {
                 </div>
             </div>';
         
-        // Add summary at bottom
         echo '<div class="alert alert-info mt-3">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-info-circle me-2 fs-4"></i>

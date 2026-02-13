@@ -8,6 +8,70 @@ let TEACHER_NAME = '';
 
 
 // Load any page via AJAX
+// function loadPage(url) {
+//     console.log('Loading page:', url);
+//     const mainContent = document.getElementById('main-content');
+    
+//     if (!mainContent) {
+//         console.error('Main content container not found!');
+//         return false;
+//     }
+    
+//     // Show loading
+//     mainContent.innerHTML = `
+//         <div class="text-center py-5 loading-spinner">
+//             <div class="spinner-border text-primary" role="status">
+//                 <span class="visually-hidden">Loading...</span>
+//             </div>
+//             <p class="mt-2">Loading...</p>
+//         </div>
+//     `;
+
+//     // Make sure URL is absolute
+//     if (!url.startsWith('http') && !url.startsWith('/')) {
+//         url = '/' + url;
+//     }
+    
+//     fetch(url)
+//         .then(response => {
+//             if (!response.ok) {
+//                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+//             }
+//             return response.text();
+//         })
+//         .then(html => {
+//             // Set HTML first
+//             mainContent.innerHTML = html;
+//             console.log('Page loaded successfully:', url);
+            
+//             // Execute scripts in the loaded content
+//             executeScriptsInContent(mainContent);
+            
+//             // Initialize Bootstrap components
+//             if (typeof initBootstrapComponents === 'function') {
+//                 initBootstrapComponents();
+//             }
+            
+//             // Dispatch page loaded event
+//             window.dispatchEvent(new CustomEvent('pageLoaded', { 
+//                 detail: { url, content: html } 
+//             }));
+//         })
+//         .catch(error => {
+//             console.error('Error loading page:', error);
+//             mainContent.innerHTML = `
+//                 <div class="alert alert-danger">
+//                     <i class="bi bi-exclamation-triangle"></i> 
+//                     Error loading content: ${error.message}
+//                     <div class="mt-2">
+//                         <button onclick="location.reload()" class="btn btn-sm btn-secondary">Reload Page</button>
+//                     </div>
+//                 </div>
+//             `;
+//         });
+// }
+
+// ===== LOAD PAGE - SIMPLE FETCH VERSION =====
 function loadPage(url) {
     console.log('Loading page:', url);
     const mainContent = document.getElementById('main-content');
@@ -19,48 +83,57 @@ function loadPage(url) {
     
     // Show loading
     mainContent.innerHTML = `
-        <div class="text-center py-5 loading-spinner">
+        <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2">Loading...</p>
         </div>
     `;
-    
+
+    // Use FETCH - simple and easy!
     fetch(url)
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}`);
             }
             return response.text();
         })
         .then(html => {
-            // Set HTML first
+            // Set the HTML
             mainContent.innerHTML = html;
-            console.log('Page loaded successfully:', url);
+            console.log('✅ Page loaded:', url);
             
-            // Execute scripts in the loaded content
-            executeScriptsInContent(mainContent);
-            
-            // Initialize Bootstrap components
-            if (typeof initBootstrapComponents === 'function') {
-                initBootstrapComponents();
-            }
-            
-            // Dispatch page loaded event
-            window.dispatchEvent(new CustomEvent('pageLoaded', { 
-                detail: { url, content: html } 
-            }));
+            // Execute ALL scripts - simple approach
+            const scripts = mainContent.querySelectorAll('script');
+            scripts.forEach(script => {
+                if (script.src) {
+                    // External script
+                    const newScript = document.createElement('script');
+                    newScript.src = script.src;
+                    newScript.async = false;
+                    document.head.appendChild(newScript);
+                    console.log('Loaded script:', script.src);
+                } else {
+                    // Inline script - use eval (works!)
+                    try {
+                        eval(script.textContent);
+                        console.log('✅ Executed inline script');
+                    } catch (e) {
+                        console.error('Script error:', e);
+                    }
+                }
+            });
         })
         .catch(error => {
-            console.error('Error loading page:', error);
+            console.error('Error:', error);
             mainContent.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i> 
-                    Error loading content: ${error.message}
-                    <div class="mt-2">
-                        <button onclick="location.reload()" class="btn btn-sm btn-secondary">Reload Page</button>
-                    </div>
+                    Error: ${error.message}
+                    <button onclick="location.reload()" class="btn btn-sm btn-secondary ms-2">
+                        Reload
+                    </button>
                 </div>
             `;
         });
@@ -432,18 +505,23 @@ function viewClassDetails(classId) {
         });
 }
 
-// ===== CLASS PERFORMANCE MODAL =====
+// ===== CLASS PERFORMANCE MODAL - ULTIMATE FIX =====
+// ===== CLASS PERFORMANCE MODAL - ULTIMATE FIX =====
 function viewClassPerformanceModal(classId, className) {
-    console.log('Loading performance modal for class:', classId, className);
+    console.log('Opening performance modal for:', classId, className);
     
     // Remove existing modal if any
     const existingModal = document.getElementById('performanceModal');
     if (existingModal) existingModal.remove();
     
-    // Show loading in modal
+    // Get absolute URL
+    const baseUrl = window.location.origin + '/Student_Result_Analytics';
+    const performanceUrl = `${baseUrl}/PHP_Files/teacher/class_performance_modal.php?class_id=${classId}`;
+    
+    // Create modal with iframe
     const modalHTML = `
         <div class="modal fade" id="performanceModal" tabindex="-1">
-            <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-dialog modal-fullscreen modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header bg-info text-white">
                         <h5 class="modal-title">
@@ -451,11 +529,10 @@ function viewClassPerformanceModal(classId, className) {
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-info mb-3" role="status"></div>
-                            <p>Loading performance data...</p>
-                        </div>
+                    <div class="modal-body p-0">
+                        <iframe src="${performanceUrl}" 
+                                style="width: 100%; height: 85vh; border: none;">
+                        </iframe>
                     </div>
                 </div>
             </div>
@@ -468,37 +545,10 @@ function viewClassPerformanceModal(classId, className) {
     const modal = new bootstrap.Modal(document.getElementById('performanceModal'));
     modal.show();
     
-    // Fetch performance data
-    fetch(`class_performance_modal.php?class_id=${classId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            return response.text();
-        })
-        .then(html => {
-            const modalBody = document.querySelector('#performanceModal .modal-body');
-            if (modalBody) {
-                modalBody.innerHTML = html;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading performance data:', error);
-            const modalBody = document.querySelector('#performanceModal .modal-body');
-            if (modalBody) {
-                modalBody.innerHTML = `
-                    <div class="alert alert-danger m-3">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Error loading performance data:</strong> ${error.message}
-                        <div class="mt-3">
-                            <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh Page
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        });
+    // Clean up
+    document.getElementById('performanceModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
 }
 
 // View individual student details
@@ -564,6 +614,216 @@ function viewStudentDetails(studentId) {
                 container.classList.remove('loading-container');
             }
         });
+}
+
+// ===== SIMPLE PERFORMANCE PAGE LOADER =====
+function loadPerformancePage(classId, className) {
+    console.log('Loading performance page for class:', classId);
+    
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+    
+    // Show loading
+    mainContent.innerHTML = `
+        <div class="content-card">
+            <div class="card-header d-flex justify-content-between align-items-center bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart-fill me-2"></i> 
+                    Class Performance: ${className}
+                </h5>
+                <button class="btn btn-sm btn-light" onclick="loadMyClasses()">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Classes
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted">Loading performance data...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    setTimeout(function() {
+        // Force reload of results.js if needed
+        if (window.location.href.includes('results.php')) {
+            const script = document.createElement('script');
+            script.src = '/Student_Result_Analytics/js/student/results.js?t=' + Date.now();
+            document.head.appendChild(script);
+        }
+    }, 200);
+    
+    // Fetch the performance page directly
+    fetch(`/Student_Result_Analytics/PHP_Files/teacher/class_performance_modal.php?class_id=${classId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            // Extract just the content we need (remove any extra HTML/BODY tags)
+            let contentHtml = html;
+            
+            // If there's body tag, extract its content
+            if (html.includes('<body>')) {
+                const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+                if (bodyMatch && bodyMatch[1]) {
+                    contentHtml = bodyMatch[1];
+                }
+            }
+            
+            // Update main content with the performance page
+            mainContent.innerHTML = `
+                <div class="content-card">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart-fill me-2"></i> 
+                             ${className}
+                        </h5>
+                        <button class="btn btn-sm btn-light" onclick="loadMyClasses()">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Classes
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+            
+            // IMPORTANT: Execute all scripts in the correct order
+            setTimeout(() => {
+                // First, execute any inline scripts in the content
+                const inlineScripts = mainContent.querySelectorAll('script:not([src])');
+                inlineScripts.forEach(script => {
+                    try {
+                        eval(script.textContent);
+                        console.log('✅ Executed inline script');
+                    } catch (e) {
+                        console.error('Inline script error:', e);
+                    }
+                });
+                
+                // Then load external scripts
+                const externalScripts = mainContent.querySelectorAll('script[src]');
+                externalScripts.forEach(script => {
+                    const src = script.src;
+                    console.log('Loading external script:', src);
+                    
+                    // Check if Highcharts is already loaded
+                    if (src.includes('highcharts.js') && typeof Highcharts !== 'undefined') {
+                        console.log('Highcharts already loaded');
+                        return;
+                    }
+                    
+                    const newScript = document.createElement('script');
+                    newScript.src = src;
+                    newScript.onload = () => console.log('✅ Loaded:', src);
+                    newScript.onerror = (e) => console.error('Failed to load:', src, e);
+                    document.head.appendChild(newScript);
+                });
+                
+                // Manually trigger performance.js if it didn't run
+                if (typeof window.classData !== 'undefined' && window.classData.students) {
+                    console.log('Manually initializing performance chart...');
+                    setTimeout(() => {
+                        if (typeof initializePerformanceChart === 'function') {
+                            initializePerformanceChart();
+                        } else if (document.querySelector('#chart')) {
+                            // Fallback: create chart manually
+                            createChartManually();
+                        }
+                    }, 500);
+                }
+            }, 100);
+            
+            console.log('✅ Performance page loaded');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mainContent.innerHTML = `
+                <div class="content-card">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i> 
+                            Error Loading Performance
+                        </h5>
+                        <button class="btn btn-sm btn-light" onclick="loadMyClasses()">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Classes
+                        </button>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-emoji-frown display-1 text-muted mb-3"></i>
+                        <h4 class="text-danger">Failed to Load Performance Data</h4>
+                        <p class="text-muted mb-4">${error.message}</p>
+                        <button class="btn btn-primary" onclick="loadPerformancePage(${classId}, '${className}')">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="loadMyClasses()">
+                            <i class="bi bi-arrow-left me-2"></i>Go Back
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Fallback function to create chart manually
+function createChartManually() {
+    if (!window.classData || !window.classData.students || window.classData.students.length === 0) {
+        console.log('No student data available');
+        return;
+    }
+    
+    const data = window.classData;
+    const chartElement = document.getElementById('chart');
+    
+    if (!chartElement || typeof Highcharts === 'undefined') {
+        console.log('Chart element or Highcharts not found');
+        return;
+    }
+    
+    const marks = data.students.map(s => s.marks);
+    
+    // Colors for chart
+    const colors = data.students.map(s => {
+        if (s.marks >= 80) return '#28a745';
+        if (s.marks >= 60) return '#ffc107';
+        if (s.marks >= 40) return '#fd7e14';
+        if (s.marks > 0) return '#dc3545';
+        return '#6c757d';
+    });
+    
+    Highcharts.chart('chart', {
+        chart: { type: 'column' },
+        title: { text: 'Student Performance' },
+        xAxis: { 
+            categories: data.students.map(s => s.name),
+            labels: { rotation: -30, style: { fontSize: '12px' } }
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: { text: 'Marks' },
+            plotLines: [{
+                value: 40,
+                color: '#ffc107',
+                dashStyle: 'dash',
+                width: 2,
+                label: { text: 'Passing Mark', style: { color: '#666' } }
+            }]
+        },
+        series: [{
+            name: 'Marks',
+            data: data.students.map(s => s.marks),
+            colorByPoint: true,
+            colors: colors
+        }],
+        credits: { enabled: false }
+    });
+    
+    console.log('Chart created manually');
 }
 
 // Edit student
@@ -678,8 +938,10 @@ window.closeOffcanvas = closeOffcanvas;
 // ===== GLOBAL EXPORTS =====
 // Make sure all functions are available globally
 window.viewClassPerformanceModal = viewClassPerformanceModal;
+window.loadPerformancePage = loadPerformancePage;
 window.viewClassStudents = viewClassStudents;
 window.viewClassDetails = viewClassDetails;
 window.viewStudentDetails = viewStudentDetails;
 window.editStudent = editStudent;
 window.deleteStudent = deleteStudent;
+

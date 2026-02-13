@@ -275,11 +275,18 @@
                                         onclick="window.teacherManager.toggleStatus(${teacher.teacher_id}, '${teacher.status}')">
                                     <i class="bi bi-power"></i>
                                 </button>
-                                <button class="btn btn-outline-success btn-sm" 
-                                        title="Assign Subjects"
-                                        onclick="window.teacherManager.openAssignModal(${teacher.teacher_id}, '${teacher.name}')">
-                                    <i class="bi bi-book"></i> Assign
-                                </button>
+                                ${teacher.status === 'active' ? 
+                                    `<button class="btn btn-outline-success btn-sm" 
+                                            title="Assign Subjects"
+                                            onclick="window.teacherManager.openAssignModal(${teacher.teacher_id}, '${teacher.name}')">
+                                        <i class="bi bi-book"></i> Assign
+                                    </button>` : 
+                                    `<button class="btn btn-outline-secondary btn-sm" 
+                                            title="Cannot assign to inactive teacher"
+                                            disabled>
+                                        <i class="bi bi-book"></i> Inactive
+                                    </button>`
+                                }
                             </div>
                         </td>
                     </tr>
@@ -417,17 +424,17 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('✅ Teacher added successfully!');
+                    alert('Teacher added successfully!');
                     // Close modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addTeacherModal'));
                     if (modal) modal.hide();
                     // Refresh list
                     this.loadTeachers();
                 } else {
-                    alert('❌ Error: ' + data.error);
+                    alert('Error: ' + data.error);
                 }
             } catch (error) {
-                alert('❌ Network error: ' + error.message);
+                alert('Network error: ' + error.message);
             } finally {
                 // Reset button
                 submitBtn.innerHTML = originalText;

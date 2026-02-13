@@ -14,12 +14,27 @@ if (!$teacher_id) {
     exit();
 }
 
-// Get teacher info
-$teacher_query = "SELECT name FROM teacher WHERE teacher_id = ?";
+// Get teacher info - CHECK IF ACTIVE
+$teacher_query = "SELECT name, status FROM teacher WHERE teacher_id = ?";
 $stmt = $connection->prepare($teacher_query);
 $stmt->bind_param("i", $teacher_id);
 $stmt->execute();
 $teacher = $stmt->get_result()->fetch_assoc();
+
+if (!$teacher) {
+    echo '<div class="alert alert-danger">Teacher not found</div>';
+    exit();
+}
+
+if ($teacher['status'] !== 'active') {
+    echo '<div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Cannot assign subjects!</strong><br>
+            This teacher is currently <strong>inactive</strong>.
+            <br><small>Please activate the teacher first in teacher management.</small>
+          </div>';
+    exit();
+}
 
 // Get all classes
 $classes_query = "SELECT * FROM class ORDER BY faculty, semester";
