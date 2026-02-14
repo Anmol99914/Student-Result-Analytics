@@ -28,13 +28,45 @@ $student = $result->fetch_assoc();
 $result_stmt = $connection->prepare("
     SELECT COUNT(*) as total_results 
     FROM result 
-    WHERE student_id = ? AND status = 'published'
+    WHERE student_id = ? AND verification_status = 'verified'
 ");
 $result_stmt->bind_param("s", $student_id);
 $result_stmt->execute();
 $result_count = $result_stmt->get_result()->fetch_assoc()['total_results'];
 
-// Get payment status
+// Get total paid across ALL semesters
+// $total_paid_query = "SELECT SUM(p.amount_paid) as total_paid_all 
+//                      FROM payment p
+//                      INNER JOIN (
+//                          SELECT student_id, MAX(payment_id) as max_id
+//                          FROM payment
+//                          WHERE payment_status = 'Paid'
+//                          GROUP BY student_id
+//                      ) latest ON p.payment_id = latest.max_id
+//                      WHERE p.student_id = ?";
+// $total_paid_stmt = $connection->prepare($total_paid_query);
+// $total_paid_stmt->bind_param("s", $student_id);
+// $total_paid_stmt->execute();
+// $total_paid_result = $total_paid_stmt->get_result();
+// $total_paid_data = $total_paid_result->fetch_assoc();
+// $total_paid_all = $total_paid_data['total_paid_all'] ?? 0;
+
+// Get total paid across ALL semesters - MAX amount per semester
+$total_paid_query = "SELECT SUM(semester_paid) as total_paid_all
+                     FROM (
+                         SELECT semester, MAX(amount_paid) as semester_paid
+                         FROM payment
+                         WHERE student_id = ?
+                         GROUP BY semester
+                     ) as per_semester";
+$total_paid_stmt = $connection->prepare($total_paid_query);
+$total_paid_stmt->bind_param("s", $student_id);
+$total_paid_stmt->execute();
+$total_paid_result = $total_paid_stmt->get_result();
+$total_paid_data = $total_paid_result->fetch_assoc();
+$total_paid_all = $total_paid_data['total_paid_all'] ?? 0;
+
+// Get current payment status (latest)
 $payment_stmt = $connection->prepare("
     SELECT amount_paid as total_paid, 
            payment_date as last_payment,
@@ -108,29 +140,29 @@ if (!$payment) {
     </div>
 
 
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-success h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Paid</h6>
-                            <h2 class="mb-0">NPR <?php echo number_format($payment['total_paid'] ?? 0); ?></h2>
-                            <small class="text-muted">Status: 
-                                <span class="badge bg-<?php 
-                                    echo $payment['payment_status'] == 'Paid' ? 'success' : 
-                                        ($payment['payment_status'] == 'Partial' ? 'warning' : 'danger'); 
-                                ?>">
-                                    <?php echo $payment['payment_status'] ?? 'Unpaid'; ?>
-                                </span>
-                            </small>                        
-                        </div>
-                        <div class="avatar bg-success bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-credit-card text-success fs-4"></i>
-                        </div>
-                    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+    <div class="card border-success h-100">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <!-- <h6 class="text-muted mb-2">Total Paid (All Time)</h6>
+                    <h2 class="mb-0">NPR <?php echo number_format($total_paid_all, 2); ?></h2> -->
+                    <small class="text-muted">Current Status: 
+                        <span class="badge bg-<?php 
+                            echo $payment['payment_status'] == 'Paid' ? 'success' : 
+                                ($payment['payment_status'] == 'Partial' ? 'warning' : 'danger'); 
+                        ?>">
+                            <?php echo $payment['payment_status'] ?? 'Unpaid'; ?>
+                        </span>
+                    </small>                        
+                </div>
+                <div class="avatar bg-success bg-opacity-10 p-3 rounded">
+                    <i class="bi bi-credit-card text-success fs-4"></i>
                 </div>
             </div>
         </div>
+    </div>
+</div>
         
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card border-info h-100">
@@ -202,7 +234,7 @@ if (!$payment) {
                            r.grade, r.published_date, sub.subject_name
                     FROM result r
                     JOIN subject sub ON r.subject_id = sub.subject_id
-                    WHERE r.student_id = ? AND r.status = 'published'
+                    WHERE r.student_id = ? AND r.verification_status = 'verified'
                     ORDER BY r.published_date DESC 
                     LIMIT 5
                 ");

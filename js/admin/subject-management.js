@@ -15,37 +15,52 @@ $(document).ready(function() {
     let currentStatus = '1';
     let searchQuery = '';
     
-    // CORRECT API PATHS - FROM admin/pages/ to admin/api/
-    // const API = {
-    //     getSubjects: '../api/get_subjects.php',      // admin/pages/ → admin/api/
-    //     addSubject: '../api/add_subject.php',
-    //     editSubject: '../api/edit_subject.php',
-    //     getStats: '../api/get_subject_stats.php',
-    //     deactivateSubject: '../api/deactivate_subject.php',
-    //     activateSubject: '../api/activate_subject.php',
-    //     hardDeleteSubject: '../api/hard_delete_subject.php'
-    // };
-
+//    Absolute paths use gareko:)
     const API =  {
-        getSubjects: '../admin/api/get_subjects.php',
-        addSubject: '../admin/api/add_subject.php',
-        editSubject: '../admin/api/edit_subject.php',
-        // deleteSubject: '../admin/api/delete_subject.php',
-        deactivateSubject: '../admin/api/deactivate_subject.php',  
-        activateSubject: '../admin/api/activate_subject.php',       
-        hardDeleteSubject: '../admin/api/hard_delete_subject.php',
-        getStats: '../admin/api/get_subject_stats.php'
+        getSubjects: '/Student_Result_Analytics/PHP_Files/admin/api/get_subjects.php',
+        addSubject: '/Student_Result_Analytics/PHP_Files/admin/api/add_subject.php',
+        editSubject: '/Student_Result_Analytics/PHP_Files/admin/api/edit_subject.php',
+        deactivateSubject: '/Student_Result_Analytics/PHP_Files/admin/api/deactivate_subject.php',  
+        activateSubject: '/Student_Result_Analytics/PHP_Files/admin/api/activate_subject.php',       
+        hardDeleteSubject: '/Student_Result_Analytics/PHP_Files/admin/api/hard_delete_subject.php',
+        getStats: '/Student_Result_Analytics/PHP_Files/admin/api/get_subject_stats.php'
     };
+
+    // const API =  {
+    //     getSubjects: '../admin/api/get_subjects.php',
+    //     addSubject: '../admin/api/add_subject.php',
+    //     editSubject: '../admin/api/edit_subject.php',
+    //     // deleteSubject: '../admin/api/delete_subject.php',
+    //     deactivateSubject: '../admin/api/deactivate_subject.php',  
+    //     activateSubject: '../admin/api/activate_subject.php',       
+    //     hardDeleteSubject: '../admin/api/hard_delete_subject.php',
+    //     getStats: '../admin/api/get_subject_stats.php'
+    // };
     console.log('API paths (relative to admin/pages/):', API);
     
     // ===== INITIALIZE =====
-    function init() {
-        console.log('Initializing from:', window.location.pathname);
-        bindEvents();
-        loadSubjects();
-        loadStats();
-    }
+function init() {
+    console.log('Initializing from:', window.location.pathname);
     
+    // Fetch faculties and build mapping
+    $.ajax({
+        url: '/Student_Result_Analytics/PHP_Files/admin/get_faculties.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(faculties) {
+            window.facultyMap = {};
+            faculties.forEach(f => {
+                window.facultyMap[f.id] = f.faculty_code;
+            });
+            console.log('Faculty map loaded:', window.facultyMap);
+        },
+        async: false // Make it synchronous for simplicity
+    });
+    
+    bindEvents();
+    loadSubjects();
+    loadStats();
+}
     // ===== BIND EVENTS =====
     function bindEvents() {
         // Add subject button
@@ -102,12 +117,18 @@ $(document).ready(function() {
         
         // Save subject
         $('#saveSubjectBtn').on('click', saveSubject);
-        
-        // Modal close 
+
+        // Modal close with cleanup
         $('#subjectModal').on('hidden.bs.modal', function() {
-            console.log('🔄 MODAL CLOSED - Soft reset (keeping values for quick re-edit)');
+            console.log('🔄 MODAL CLOSED - Cleaning up');
+            
             // Don't reset the form completely, just clear the ID
             $('#subjectId').val('');
+            
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
         });
     }
     
@@ -335,15 +356,25 @@ $(document).ready(function() {
     
     // ===== EDIT/SAVE FUNCTIONS =====
     function showAddModal() {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        
         $('#modalTitle').html('<i class="fas fa-book me-1"></i> Add New Subject');
         $('#subjectForm')[0].reset();
         $('#subjectId').val('');
         $('#isActive').val('1');
-        new bootstrap.Modal('#subjectModal').show();
+        
+        // Show modal with proper cleanup
+        const modal = new bootstrap.Modal(document.getElementById('subjectModal'));
+        modal.show();
     }
     
     function editSubject(subjectId) {
         console.log('Editing subject:', subjectId);
+        
+        // CLEANUP BEFORE OPENING
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
         
         $.ajax({
             url: API.getSubjects,
@@ -371,8 +402,8 @@ $(document).ready(function() {
     }
     
     function populateEditForm(subject) {
-        console.log('🎯 populateEditForm for:', subject.subject_code);
-        console.log('🎯 is_elective:', subject.is_elective, 'type:', typeof subject.is_elective);
+        console.log('populateEditForm for:', subject.subject_code);
+        console.log('is_elective:', subject.is_elective, 'type:', typeof subject.is_elective);
         
         // DON'T reset the form! Just populate
         
@@ -482,17 +513,27 @@ $(document).ready(function() {
             success: function(response) {
                 console.log('Save response:', response);
                 if (response.success) {
-                    alert('✓ ' + (response.message || 'Subject saved successfully!'));
+                    alert('Nice!' + (response.message || 'Subject saved successfully!'));
+                    
+                    // PROPERLY CLOSE MODAL
                     $('#subjectModal').modal('hide');
-                    loadSubjects();
-                    loadStats();
+                    
+                    // LOAD DATA AFTER MODAL IS FULLY CLOSED
+                    setTimeout(() => {
+                        loadSubjects();
+                        loadStats();
+                    }, 300);
+                    
                 } else {
                     alert('✗ ' + (response.message || 'Failed to save subject'));
                 }
             },
             error: function(xhr) {
                 console.error('Save error:', xhr.responseText);
-                alert('Network error. Check console for details.');
+                // Don't show alert for expected errors (like duplicate code)
+                if (!xhr.responseText.includes('already exists')) {
+                    alert('Network error. Check console for details.');
+                }
             },
             complete: function() {
                 saveBtn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save Subject');
@@ -591,8 +632,9 @@ $(document).ready(function() {
     }
     
     function getFacultyName(facultyId) {
-        const facultyMap = { 1: 'BCA', 2: 'BBM', 3: 'BIM' };
-        return facultyMap[facultyId] || 'Unknown';
+        return window.facultyMap && window.facultyMap[facultyId] 
+            ? window.facultyMap[facultyId] 
+            : 'Unknown';
     }
     
     function escapeHtml(text) {

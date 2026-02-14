@@ -9,12 +9,12 @@ if (window.StudentManager) {
 // DEFINE StudentManager IMMEDIATELY
 window.StudentManager = class StudentManager {
     constructor() {
-        console.log('🎯 StudentManager CONSTRUCTOR called');
+        console.log('StudentManager CONSTRUCTOR called');
         this.init();
     }
     
     init() {
-        console.log('📊 StudentManager INIT called');
+        console.log('StudentManager INIT called');
         
         // Load data immediately
         this.loadStudents();
@@ -24,7 +24,7 @@ window.StudentManager = class StudentManager {
     }
     
     setupEventListeners() {
-        console.log('🔗 Setting up event listeners');
+        console.log('Setting up event listeners');
         
         // Add Student button
         document.getElementById('addStudentBtn')?.addEventListener('click', () => {
@@ -54,14 +54,21 @@ window.StudentManager = class StudentManager {
             document.getElementById('searchInput').value = '';
             this.loadStudents();
         });
+
+        // Export button for exporting
+        document.getElementById('exportStudentsBtn')?.addEventListener('click', () => {
+            this.exportStudents();
+        });
     }
+
+    
     
     async loadStudents() {
-        console.log('🔄 Loading students...');
+        console.log('Loading students...');
         
         const container = document.getElementById('studentsContainer');
         if (!container) {
-            console.error('❌ studentsContainer not found!');
+            console.error('studentsContainer not found!');
             return;
         }
         
@@ -98,13 +105,13 @@ window.StudentManager = class StudentManager {
             }
             
             const students = await response.json();
-            console.log(`✅ Found ${students.length} students`);
+            console.log(`Found ${students.length} students`);
             
             this.renderStudents(students);
             this.updateStats(students); // Use this ONE function for stats
             
         } catch (error) {
-            console.error('❌ Error loading students:', error);
+            console.error('Error loading students:', error);
             container.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -119,7 +126,7 @@ window.StudentManager = class StudentManager {
     
     // For stats
     updateStats(students) {
-        console.log('📊 Updating stats from', students.length, 'students');
+        console.log('Updating stats from', students.length, 'students');
         
         const total = students.length;
         const active = students.filter(s => s.is_active == 1).length;
@@ -146,14 +153,14 @@ window.StudentManager = class StudentManager {
         document.getElementById('pendingStudents').textContent = pending;
         document.getElementById('recentStudents').textContent = recent;
         
-        console.log(`✅ Stats - Total: ${total}, Active: ${active}, Pending: ${pending}, Recent: ${recent}`);
+        console.log(`Stats - Total: ${total}, Active: ${active}, Pending: ${pending}, Recent: ${recent}`);
     }
     
     renderStudents(students) {
         const container = document.getElementById('studentsContainer');
         if (!container) return;
         
-        console.log(`🎨 Rendering ${students.length} students`);
+        console.log(`Rendering ${students.length} students`);
         
         if (students.length === 0) {
             container.innerHTML = '<div class="alert alert-info">No students found</div>';
@@ -217,6 +224,9 @@ window.StudentManager = class StudentManager {
                     <button class="btn btn-sm btn-outline-danger" onclick="window.studentManager.toggleStudentStatus('${s.student_id}', ${s.is_active})" title="${s.is_active == 1 ? 'Deactivate' : 'Activate'}">
                         <i class="bi bi-power"></i>
                     </button>
+                    <button class="btn btn-outline-success" onclick="window.studentManager.promoteStudent('${s.student_id}', '${s.faculty}', ${s.semester})" title="Promote to Next Semester">
+                        <i class="bi bi-arrow-up-circle"></i>
+                    </button>
                 </td>
             </tr>`;
         });
@@ -233,7 +243,6 @@ window.StudentManager = class StudentManager {
         const existingModal = document.getElementById('addStudentModal');
         if (existingModal) existingModal.remove();
         
-        // ✅ FIXED PATH - lowercase 'students'
         fetch('/Student_Result_Analytics/PHP_Files/admin/students/add_student_modal.php')
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -269,7 +278,7 @@ window.StudentManager = class StudentManager {
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
         submitBtn.disabled = true;
         
-        // ✅ FIXED PATH - lowercase 'students'
+        // FIXED PATH - lowercase 'students'
         fetch('/Student_Result_Analytics/PHP_Files/admin/students/add_student.php', {
             method: 'POST',
             body: formData
@@ -280,18 +289,18 @@ window.StudentManager = class StudentManager {
         })
         .then(data => {
             if (data.success) {
-                alert('✅ ' + data.message);
+                alert('Success: ' + data.message);
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
                 if (modal) modal.hide();
                 this.loadStudents();
             } else {
-                alert('❌ Error: ' + data.error);
+                alert('Error: ' + data.error);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         })
         .catch(error => {
-            alert('❌ Error: ' + error.message);
+            alert('Error: ' + error.message);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
@@ -380,21 +389,48 @@ submitEditStudent() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ ' + data.message);
+            alert('Success:' + data.message);
             const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
             if (modal) modal.hide();
             this.loadStudents(); // Refresh list
         } else {
-            alert('❌ Error: ' + data.error);
+            alert('Error: ' + data.error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
     })
     .catch(error => {
-        alert('❌ Error: ' + error.message);
+        alert('Error: ' + error.message);
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     });
+}
+
+// ===== EXPORT STUDENTS =====
+exportStudents() {
+    console.log('Exporting students...');
+    
+    // Get current filter values
+    const faculty = document.getElementById('facultyFilter')?.value || '';
+    const semester = document.getElementById('semesterFilter')?.value || '';
+    const status = document.getElementById('statusFilter')?.value || '';
+    const search = document.getElementById('searchInput')?.value || '';
+    
+    // Build URL with current filters
+    let url = '/Student_Result_Analytics/PHP_Files/admin/students/export_students.php?';
+    const params = [];
+    
+    if (faculty) params.push('faculty=' + encodeURIComponent(faculty));
+    if (semester) params.push('semester=' + semester);
+    if (status) params.push('status=' + status);
+    if (search) params.push('search=' + encodeURIComponent(search));
+    
+    url += params.join('&');
+    
+    console.log('Export URL:', url);
+    
+    // Open in new tab for download
+    window.open(url, '_blank');
 }
 
 // ===== TOGGLE STUDENT STATUS =====
@@ -410,14 +446,65 @@ toggleStudentStatus(studentId, currentStatus) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ ' + data.message);
+            alert('Success:' + data.message);
             this.loadStudents(); // Refresh list
         } else {
-            alert('❌ Error: ' + data.error);
+            alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        alert('❌ Error: ' + error.message);
+        alert('Error: ' + error.message);
+    });
+}
+// ===== PROMOTE STUDENT =====
+promoteStudent(studentId, faculty, currentSemester) {
+    console.log('Promoting student:', studentId, 'from', currentSemester);
+    
+    const nextSemester = parseInt(currentSemester) + 1;
+    
+    if (nextSemester > 8) {
+        alert('Student has already completed all 8 semesters!');
+        return;
+    }
+    
+    if (!confirm(`Promote student ${studentId} from Semester ${currentSemester} to Semester ${nextSemester}?`)) {
+        return;
+    }
+    
+    // Show loading on button
+    const btn = event?.target?.closest('button');
+    const originalHTML = btn?.innerHTML;
+    if (btn) {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+    }
+    
+    fetch('/Student_Result_Analytics/PHP_Files/admin/students/promote_student.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'student_id=' + encodeURIComponent(studentId)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (btn) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+        
+        if (data.success) {
+            alert('Done! ' + data.message);
+            this.loadStudents(); // Refresh the list
+        } else {
+            alert('Error!' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (btn) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+        alert('Network error: ' + error.message);
     });
 }
 
@@ -431,7 +518,7 @@ togglePaymentStatus(studentId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ ' + data.message);
+            alert('Success:' + data.message);
             this.loadStudents(); // Refresh list
             
             // Close view modal if open
@@ -440,16 +527,16 @@ togglePaymentStatus(studentId) {
                 bootstrap.Modal.getInstance(viewModal)?.hide();
             }
         } else {
-            alert('❌ Error: ' + data.error);
+            alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        alert('❌ Error: ' + error.message);
+        alert('Error: ' + error.message);
     });
 }
 };
 
-console.log('✅ StudentManager class defined');
+console.log('StudentManager class defined');
 
 // ===== SINGLE INITIALIZATION WITH FLAG =====
 if (!window.studentManagerInitialized) {
@@ -459,21 +546,21 @@ if (!window.studentManagerInitialized) {
 function initializeStudentManager() {
     // Check if already initialized
     if (window.studentManagerInitialized) {
-        console.log('✅ StudentManager already initialized, skipping');
+        console.log('StudentManager already initialized, skipping');
         return true;
     }
     
     if (!document.getElementById('studentsContainer')) {
-        console.log('⏳ studentsContainer not found, will retry...');
+        console.log('studentsContainer not found, will retry...');
         return false;
     }
     
     if (typeof StudentManager === 'undefined') {
-        console.error('❌ StudentManager not defined');
+        console.error('StudentManager not defined');
         return false;
     }
     
-    console.log('🚀 Creating StudentManager instance');
+    console.log('Creating StudentManager instance');
     window.studentManager = new StudentManager();
     window.studentManagerInitialized = true;
     return true;
@@ -499,7 +586,7 @@ window.addEventListener('pageLoaded', function(e) {
         // Don't create new instance, just reload data
         if (window.studentManager && typeof window.studentManager.loadStudents === 'function') {
             setTimeout(() => {
-                console.log('🔄 Reloading student data...');
+                console.log('Reloading student data...');
                 window.studentManager.loadStudents();
             }, 100);
         }

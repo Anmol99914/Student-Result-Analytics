@@ -176,10 +176,10 @@ document.addEventListener('DOMContentLoaded', function() {
                        onclick="loadPage(this.href); return false;">
                         <i class="bi bi-clipboard-data me-2"></i>View Results
                     </a>
-                    <a class="nav-link text-white mb-2" href="../pages/payments.php" 
+                    <!-- <a class="nav-link text-white mb-2" href="../pages/payments.php" 
                        onclick="loadPage(this.href); return false;">
                         <i class="bi bi-credit-card me-2"></i>Fee Payments
-                    </a>
+                    </a> -->
                 </nav>
             </div>
         </div>

@@ -300,6 +300,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
         // Approve result
         function approveResult() {
             const comments = document.getElementById('verifyComments').value;
+
+            console.log('Approving result ID:', currentResultId); // DEBUG
             
             fetch('ajax/verify_result.php', {
                 method: 'POST',
@@ -312,9 +314,12 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Approve response:', data); // DEBUG
                 if (data.success) {
                     alert('Result approved successfully!');
                     modal.hide();
+                    console.log('Calling refreshStats...'); // DEBUG
+                    
                     refreshStats();
                 } else {
                     alert('Error: ' + data.message);

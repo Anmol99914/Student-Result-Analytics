@@ -20,45 +20,55 @@ include(__DIR__ . '/../../../config.php');
         </div>
     </div>
     
-    <!-- Filters -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <select class="form-select" id="facultyFilter">
-                <option value="">All Faculties</option>
-                <option value="BCA">BCA</option>
-                <option value="BBM">BBM</option>
-                <option value="BIM">BIM</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="semesterFilter">
-                <option value="">All Semesters</option>
-                <?php for($i = 1; $i <= 8; $i++): ?>
-                    <option value="<?php echo $i; ?>">Semester <?php echo $i; ?></option>
-                <?php endfor; ?>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="statusFilter">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <div class="input-group">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search by name or ID">
-                <button class="btn btn-outline-secondary" type="button" id="searchBtn">
-                    <i class="bi bi-search"></i>
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <select class="form-select" id="facultyFilter">
+                    <option value="">All Faculties</option>
+                    <?php
+                    // Fetch all active faculties from database
+                    $faculty_query = "SELECT faculty_code, faculty_name FROM faculty WHERE status = 'active' ORDER BY faculty_code";
+                    $faculty_result = $connection->query($faculty_query);
+                    
+                    if ($faculty_result && $faculty_result->num_rows > 0) {
+                        while ($faculty = $faculty_result->fetch_assoc()) {
+                            $faculty_code = htmlspecialchars($faculty['faculty_code']);
+                            $faculty_name = htmlspecialchars($faculty['faculty_name']);
+                            echo "<option value=\"$faculty_code\">$faculty_name ($faculty_code)</option>";
+                        }
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="semesterFilter">
+                    <option value="">All Semesters</option>
+                    <?php for($i = 1; $i <= 8; $i++): ?>
+                        <option value="<?php echo $i; ?>">Semester <?php echo $i; ?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by name or ID">
+                    <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" id="resetFiltersBtn">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
                 </button>
             </div>
         </div>
-        <div class="col-md-2">
-            <button class="btn btn-outline-secondary w-100" id="resetFiltersBtn">
-                <i class="bi bi-arrow-clockwise"></i> Reset
-            </button>
-        </div>
-    </div>
     
     <!-- Stats Cards -->
     <div class="row mb-4">
@@ -149,29 +159,28 @@ include(__DIR__ . '/../../../config.php');
 
 
 <script>
-// SINGLE INITIALIZATION - CHECK IF ALREADY LOADED
+// SINGLE INITIALIZATION - TO CHECK IF ALREADY LOADED
 if (!window.studentManagerLoaded) {
     window.studentManagerLoaded = true;
     
-    console.log('📦 First time loading student management...');
+    console.log('First time loading student management...');
     
     const script = document.createElement('script');
     script.src = '/Student_result_analytics/js/admin/student-management.js?v=' + Date.now();
     script.async = false;
     
     script.onload = function() {
-        console.log('✅ student-management.js loaded');
-        // DON'T create instance here - let the script handle it
+        console.log('student-management.js loaded');
     };
     
     document.head.appendChild(script);
     
 } else {
-    console.log('⚠️ Student management already loaded, reusing existing instance');
+    console.log('Student management already loaded, reusing existing instance');
     
     // Just re-initialize the existing manager
     if (window.studentManager && typeof window.studentManager.loadStudents === 'function') {
-        console.log('🔄 Reloading student data...');
+        console.log('Reloading student data...');
         window.studentManager.loadStudents();
     }
 }

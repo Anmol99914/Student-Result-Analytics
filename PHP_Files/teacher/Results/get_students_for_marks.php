@@ -184,31 +184,52 @@ while ($row = $marks_result->fetch_assoc()) {
                 </span>
             <?php endif; ?>
         </td>
-        
-        <!-- Status -->
-        <td>
-            <?php if ($existing): ?>
-                <?php
-                $status_class = '';
-                $status_text = '';
-                if ($existing['verification_status'] == 'verified') {
-                    $status_class = 'bg-success';
-                    $status_text = 'Verified';
-                } elseif ($existing['verification_status'] == 'rejected') {
-                    $status_class = 'bg-danger';
-                    $status_text = 'Rejected';
-                } else {
-                    $status_class = 'bg-warning';
-                    $status_text = 'Pending';
-                }
-                ?>
-                <span class="badge <?php echo $status_class; ?>">
-                    <?php echo $status_text; ?>
-                </span>
-            <?php else: ?>
-                <span class="badge bg-light text-dark">Not Entered</span>
-            <?php endif; ?>
-        </td>
+                <!-- Status -->
+                <td>
+                    <?php if ($existing): ?>
+                        <?php
+                        $status_class = '';
+                        $status_text = '';
+                        $rejection_reason = '';
+                        
+                        if ($existing['verification_status'] == 'verified') {
+                            $status_class = 'bg-success';
+                            $status_text = 'Verified';
+                        } elseif ($existing['verification_status'] == 'rejected') {
+                            $status_class = 'bg-danger';
+                            $status_text = 'Rejected';
+                            
+                            // Fetch rejection reason from comments column
+                            $reason_sql = "SELECT comments FROM result WHERE student_id = ? AND subject_id = ? AND verification_status = 'rejected' ORDER BY updated_at DESC LIMIT 1";
+                            $reason_stmt = $connection->prepare($reason_sql);
+                            $reason_stmt->bind_param("si", $student['student_id'], $subject_id);
+                            $reason_stmt->execute();
+                            $reason_result = $reason_stmt->get_result();
+                            if ($reason_row = $reason_result->fetch_assoc()) {
+                                $rejection_reason = $reason_row['comments'];
+                                // Debug output in HTML comments
+                                echo "<!-- Reason for {$student['student_id']}: " . htmlspecialchars($rejection_reason ?? '') . " -->";
+                            }
+                        } else {
+                            $status_class = 'bg-warning';
+                            $status_text = 'Pending';
+                        }
+                        ?>
+                        <div>
+                            <span class="badge <?php echo $status_class; ?> mb-1">
+                                <?php echo $status_text; ?>
+                            </span>
+                            <?php if ($existing['verification_status'] == 'rejected'): ?>
+    <button type="button" class="btn btn-link btn-sm p-0 ms-1" 
+            onclick="alert('Rejection reason: <?php echo addslashes($rejection_reason ?? 'No reason provided'); ?>')">
+        <i class="bi bi-info-circle text-danger"></i> Why?
+    </button>
+<?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <span class="badge bg-light text-dark">Not Entered</span>
+                    <?php endif; ?>
+                </td>
     </tr>
     <?php endwhile; ?>
 </tbody>
@@ -299,3 +320,4 @@ while ($row = $marks_result->fetch_assoc()) {
     100% { opacity: 1; }
 }
 </style>
+

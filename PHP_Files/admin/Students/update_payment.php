@@ -64,7 +64,7 @@ try {
         
         echo json_encode([
             'success' => true, 
-            'message' => "✅ $student_id: $current_status → $new_status",
+            'message' => "$student_id: $current_status → $new_status",
             'status' => $new_status,
             'amount_paid' => $amount_paid,
             'due_amount' => $due['due_amount']

@@ -1,4 +1,4 @@
-<!-- teacher_login.php -->
+
 <!doctype html>
 <html lang="en">
 
@@ -415,12 +415,12 @@
             <!-- Login Form -->
             <form action="teacher_validation.php" method="POST" name="teacher_form" id="teacherForm" class="needs-validation" novalidate>
                 <div class="floating-label">
-                    <input type="email" class="form-control" id="email" name="email" 
-                           placeholder=" " required autocomplete="email">
+                    <input type="text" class="form-control" id="email" name="email" 
+                           placeholder="Enter your email address">
                     <label class="floating-text" for="email">
                         <i class="bi bi-envelope me-2"></i>Teacher Email
                     </label>
-                    <span class="email-hint">e.g., name@college.edu</span>
+                    <span class="email-hint">e.g., name@college.com</span>
                     <div class="invalid-feedback">
                         Please enter your teacher email address.
                     </div>
@@ -428,7 +428,7 @@
                 
                 <div class="floating-label">
                     <input type="password" class="form-control" id="password" name="password" 
-                           placeholder=" " required autocomplete="current-password">
+                           placeholder="Enter your password">
                     <label class="floating-text" for="password">
                         <i class="bi bi-key me-2"></i>Password
                     </label>
@@ -463,178 +463,83 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Enhanced form handling with floating labels
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('teacherForm');
-            const loginBtn = document.getElementById('loginBtn');
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('teacherForm');
+        const loginBtn = document.getElementById('loginBtn');
+        
+        // Initialize floating labels
+        const floatingInputs = document.querySelectorAll('.floating-label .form-control');
+        floatingInputs.forEach(input => {
+            // Set placeholder to single space for floating label effect
+            input.setAttribute('placeholder', ' ');
             
-            // Initialize floating labels
-            const floatingInputs = document.querySelectorAll('.floating-label .form-control');
-            floatingInputs.forEach(input => {
-                // Set placeholder to single space for floating label effect
-                input.setAttribute('placeholder', ' ');
-                
-                // Check on page load if input has value
-                if (input.value.trim() !== '') {
-                    input.classList.add('has-value');
-                }
-                
-                // Handle input events
-                input.addEventListener('input', function() {
-                    if (this.value.trim() !== '') {
-                        this.classList.add('has-value');
-                    } else {
-                        this.classList.remove('has-value');
-                    }
-                });
-                
-                // Handle focus events
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('focused');
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('focused');
-                    if (this.value.trim() === '') {
-                        this.classList.remove('has-value');
-                    }
-                });
-            });
+            // Check on page load if input has value
+            if (input.value.trim() !== '') {
+                input.classList.add('has-value');
+            }
             
-            // Auto-focus on email field
-            document.getElementById('email').focus();
-            
-            // Form validation
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                if (!form.checkValidity()) {
-                    e.stopPropagation();
-                    form.classList.add('was-validated');
-                    return;
-                }
-                
-                // Show loading state
-                const originalText = loginBtn.innerHTML;
-                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
-                loginBtn.disabled = true;
-                
-                // Add loading animation to button
-                loginBtn.style.opacity = '0.9';
-                
-                // Submit form
-                const formData = new FormData(form);
-                
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        return response.text();
-                    }
-                })
-                .then(data => {
-                    if (data) {
-                        try {
-                            const result = JSON.parse(data);
-                            if (result.success) {
-                                // Add success animation
-                                loginBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Access Granted!';
-                                loginBtn.style.background = 'linear-gradient(135deg, #20c997 0%, #198754 100%)';
-                                
-                                // Redirect after short delay
-                                setTimeout(() => {
-                                    window.location.href = 'teacher_dashboard.php';
-                                }, 600);
-                            } else {
-                                window.location.href = 'teacher_login.php?error=invalid';
-                            }
-                        } catch (e) {
-                            window.location.href = 'teacher_login.php?error=invalid';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    window.location.href = 'teacher_login.php?error=invalid';
-                })
-                .finally(() => {
-                    // Reset button after 2 seconds if not redirected
-                    setTimeout(() => {
-                        loginBtn.innerHTML = originalText;
-                        loginBtn.disabled = false;
-                        loginBtn.style.opacity = '1';
-                        loginBtn.style.background = '';
-                    }, 2000);
-                });
-            });
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Enter to submit
-                if (e.key === 'Enter' && !e.ctrlKey) {
-                    if (document.activeElement.tagName !== 'BUTTON') {
-                        form.dispatchEvent(new Event('submit'));
-                    }
-                }
-            });
-            
-            // Add focus effect to button
-            loginBtn.addEventListener('mouseenter', function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(-3px)';
-                }
-            });
-            
-            loginBtn.addEventListener('mouseleave', function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(0)';
-                }
-            });
-            
-            // Email validation
-            const emailInput = document.getElementById('email');
-            emailInput.addEventListener('blur', function() {
-                const email = this.value.trim();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                
-                if (email && !emailRegex.test(email)) {
-                    this.classList.add('is-invalid');
-                    this.setCustomValidity('Please enter a valid email address');
+            // Handle input events
+            input.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    this.classList.add('has-value');
                 } else {
-                    this.classList.remove('is-invalid');
-                    this.setCustomValidity('');
-                }
-            });
-            
-            // Real-time email validation
-            emailInput.addEventListener('input', function() {
-                const email = this.value.trim();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                
-                if (email && !emailRegex.test(email)) {
-                    this.classList.add('is-invalid');
-                    this.setCustomValidity('Please enter a valid email address');
-                } else {
-                    this.classList.remove('is-invalid');
-                    this.setCustomValidity('');
+                    this.classList.remove('has-value');
                 }
             });
         });
         
-        // Handle back button cache
-        window.addEventListener('pageshow', function (event) {
+        // Auto-focus on email field
+        document.getElementById('email').focus();
+        
+        // Remove Bootstrap's default validation styling
+        form.classList.remove('was-validated');
+        
+        // Form submission - ONLY validate here
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Remove any existing validation classes
+            document.getElementById('email').classList.remove('is-invalid', 'is-valid');
+            document.getElementById('password').classList.remove('is-invalid', 'is-valid');
+            
+            // Get values
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            // Manual validation
+            let isValid = true;
+            
+            if (email === '') {
+                document.getElementById('email').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            if (password === '') {
+                document.getElementById('password').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return; // Don't add was-validated class
+            }
+            
+            // Show loading state
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
+            loginBtn.disabled = true;
+            
+            // Submit form
+            form.submit();
+        });
+    });
+
+    window.addEventListener('pageshow', function (event) {
             if (event.persisted) {
                 window.location.reload();
             }
         });
-    </script>
+</script>
 
 </body>
 

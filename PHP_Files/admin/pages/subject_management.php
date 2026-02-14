@@ -32,7 +32,7 @@ $semesters = range(1, 8);
                 <h1 class="page-title mb-0">
                     <i class="fas fa-book-open me-2"></i>Subject Management
                 </h1>
-                <p class="text-muted mb-0">Manage subjects for BCA, BBM, and BIM programs</p>
+                <p class="text-muted mb-0">Manage subjects for different programs</p>
             </div>
             <div class="page-actions">
                 <button class="btn btn-primary" id="addSubjectBtn">
@@ -43,7 +43,7 @@ $semesters = range(1, 8);
     </div>
 
     <!-- Quick Stats Cards -->
-    <div class="row mb-4">
+    <!-- <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
@@ -58,8 +58,8 @@ $semesters = range(1, 8);
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> -->
+        <!-- </div>
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card border-left-success shadow h-100 py-2">
                 <div class="card-body">
@@ -75,8 +75,8 @@ $semesters = range(1, 8);
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-3">
+        </div> -->
+        <!-- <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -91,7 +91,7 @@ $semesters = range(1, 8);
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card border-left-warning shadow h-100 py-2">
                 <div class="card-body">

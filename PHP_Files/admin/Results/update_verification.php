@@ -19,26 +19,19 @@ if (!$result_id || !in_array($status, ['verified', 'rejected'])) {
     exit();
 }
 
-// SIMPLE UPDATE - only update what exists
 $sql = "UPDATE result SET 
         verification_status = ?,
         updated_at = NOW()";
 $params = [$status];
 $types = "s";
 
-// Add reason if column exists
-$check = $connection->query("SHOW COLUMNS FROM result LIKE 'verification_reason'");
-if ($check && $check->num_rows > 0) {
-    $sql .= ", verification_reason = ?";
-    $params[] = $reason;
-    $types .= "s";
-}
+// Add reason to comments column 
+$sql .= ", comments = ?";
+$params[] = $reason;
+$types .= "s";
 
-// Add verification date if column exists
-$check = $connection->query("SHOW COLUMNS FROM result LIKE 'verification_date'");
-if ($check && $check->num_rows > 0) {
-    $sql .= ", verification_date = NOW()";
-}
+// Add verification date 
+$sql .= ", verification_date = NOW()";
 
 $sql .= " WHERE result_id = ?";
 $params[] = $result_id;

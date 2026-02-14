@@ -41,7 +41,7 @@ $pending_count = $pending_result->fetch_assoc()['count'];
     </div>
 
     <!-- Stats Cards -->
-    <div class="row mb-4">
+    <!-- <div class="row mb-4">
         <div class="col-md-3">
             <div class="card border-warning shadow-sm">
                 <div class="card-body">
@@ -57,9 +57,9 @@ $pending_count = $pending_result->fetch_assoc()['count'];
                     <small class="text-muted">Awaiting admin approval</small>
                 </div>
             </div>
-        </div>
+        </div> -->
         
-        <div class="col-md-3">
+        <!-- <div class="col-md-3">
             <div class="card border-success shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -75,8 +75,8 @@ $pending_count = $pending_result->fetch_assoc()['count'];
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-3">
+         -->
+        <!-- <div class="col-md-3">
             <div class="card border-danger shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -91,8 +91,8 @@ $pending_count = $pending_result->fetch_assoc()['count'];
                     <small class="text-muted">Sent back for correction</small>
                 </div>
             </div>
-        </div>
-        
+        </div> -->
+<!--         
         <div class="col-md-3">
             <div class="card border-info shadow-sm">
                 <div class="card-body">
@@ -109,7 +109,7 @@ $pending_count = $pending_result->fetch_assoc()['count'];
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Pending Results Table -->
     <div class="card border-light shadow-sm">
@@ -118,7 +118,7 @@ $pending_count = $pending_result->fetch_assoc()['count'];
                 <div>
                     <h5 class="mb-0">
                         <i class="bi bi-list-check me-2"></i> Pending Results
-                        <span class="badge bg-warning ms-2"><?php echo $pending_count; ?></span>
+                        <!-- <span class="badge bg-warning ms-2"><?php echo $pending_count; ?></span> -->
                     </h5>
                 </div>
                 <div class="d-flex gap-2">

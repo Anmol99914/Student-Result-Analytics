@@ -1,8 +1,5 @@
 <?php
 // File: PHP_Files/admin/api/add_subject.php
-// Purpose: API endpoint to add a new subject
-// Methods: POST
-// Required fields: subject_name, subject_code, faculty_id, semester, credits
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -24,6 +21,12 @@ if (!isset($_SESSION['admin_id'])) {
 // Include config from root folder
 require_once '../../../config.php';
 
+// Check if connection exists
+if (!isset($connection) || !$connection) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    exit();
+}
+
 // Default response
 $response = ['success' => false, 'message' => ''];
 
@@ -43,24 +46,24 @@ try {
         }
     }
     
-    // Sanitize inputs
-    $subject_name = mysqli_real_escape_string($conn, trim($data['subject_name']));
-    $subject_code = mysqli_real_escape_string($conn, strtoupper(trim($data['subject_code'])));
+    // Sanitize inputs - CHANGE $conn TO $connection
+    $subject_name = mysqli_real_escape_string($connection, trim($data['subject_name']));
+    $subject_code = mysqli_real_escape_string($connection, strtoupper(trim($data['subject_code'])));
     $faculty_id = intval($data['faculty_id']);
     $semester = intval($data['semester']);
     $credits = intval($data['credits']);
-    $is_elective = intval($input['is_elective'] ?? 0);
+    $is_elective = isset($data['is_elective']) ? intval($data['is_elective']) : 0;
     $is_active = isset($data['is_active']) ? intval($data['is_active']) : 1;
-    $description = isset($data['description']) ? mysqli_real_escape_string($conn, trim($data['description'])) : '';
+    $description = isset($data['description']) ? mysqli_real_escape_string($connection, trim($data['description'])) : '';
     
-    // Validate faculty exists
-    $facultyCheck = mysqli_query($conn, "SELECT faculty_id FROM faculty WHERE faculty_id = $faculty_id AND is_active = 1");
+    // Validate faculty exists - CHANGE $conn TO $connection
+    $facultyCheck = mysqli_query($connection, "SELECT faculty_id FROM faculty WHERE faculty_id = $faculty_id");
     if (mysqli_num_rows($facultyCheck) == 0) {
         throw new Exception('Invalid faculty selected');
     }
     
-    // Check if subject code already exists
-    $codeCheck = mysqli_query($conn, "SELECT subject_id FROM subject WHERE subject_code = '$subject_code'");
+    // Check if subject code already exists - CHANGE $conn TO $connection
+    $codeCheck = mysqli_query($connection, "SELECT subject_id FROM subject WHERE subject_code = '$subject_code'");
     if (mysqli_num_rows($codeCheck) > 0) {
         throw new Exception("Subject code '$subject_code' already exists");
     }
@@ -76,7 +79,7 @@ try {
         throw new Exception('Credits must be 2, 3, 4, 6, or 8');
     }
     
-    // Prepare SQL insert
+    // Prepare SQL insert - CHANGE $conn TO $connection
     $sql = "INSERT INTO subject (
                 subject_name, 
                 subject_code, 
@@ -87,11 +90,11 @@ try {
                 description, 
                 is_active,
                 created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     
-    $stmt = mysqli_prepare($conn, $sql);
+    $stmt = mysqli_prepare($connection, $sql);
     if (!$stmt) {
-        throw new Exception('Database error: ' . mysqli_error($conn));
+        throw new Exception('Database error: ' . mysqli_error($connection));
     }
     
     mysqli_stmt_bind_param($stmt, 'ssiiiisi', 
@@ -106,14 +109,14 @@ try {
     );
     
     if (mysqli_stmt_execute($stmt)) {
-        $subject_id = mysqli_insert_id($conn);
+        $subject_id = mysqli_insert_id($connection);
         
         $response['success'] = true;
         $response['message'] = 'Subject added successfully';
         $response['subject_id'] = $subject_id;
         $response['subject_code'] = $subject_code;
     } else {
-        throw new Exception('Failed to add subject: ' . mysqli_error($conn));
+        throw new Exception('Failed to add subject: ' . mysqli_stmt_error($stmt));
     }
     
     mysqli_stmt_close($stmt);
@@ -122,8 +125,8 @@ try {
     $response['message'] = $e->getMessage();
     http_response_code(400);
 } finally {
-    if (isset($conn)) {
-        mysqli_close($conn);
+    if (isset($connection)) {
+        mysqli_close($connection);
     }
 }
 

@@ -1,7 +1,5 @@
 <?php
-// class_management.php - Class Management Page
-// include('../../../config.php');
-// include(__DIR__ . '/../../../config.php');
+
 require_once '../../../config.php';
 
 
@@ -20,39 +18,59 @@ require_once '../../../config.php';
         </div>
     </div>
     
-    <!-- Faculty Filter -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <select class="form-select" id="facultyFilter">
-                <option value="">All Faculties</option>
-                <option value="BCA">BCA</option>
-                <option value="BBM">BBM</option>
-                <option value="BIM">BIM</option>
-                <option value="BBA">BBA</option>
-                <option value="BIT">BIT</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select" id="semesterFilter">
-                <option value="">All Semesters</option>
-                <?php for($i = 1; $i <= 8; $i++): ?>
-                    <option value="<?php echo $i; ?>">Semester <?php echo $i; ?></option>
-                <?php endfor; ?>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select" id="statusFilter">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-outline-secondary w-100" id="resetFiltersBtn">
-                <i class="bi bi-arrow-clockwise"></i> Reset Filters
-            </button>
-        </div>
+   <!-- Faculty Filter -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <select class="form-select" id="facultyFilter">
+            <option value="">All Faculties</option>
+            <?php
+            // Fetch all active faculties from database
+            $faculty_query = "SELECT faculty_code, faculty_name FROM faculty WHERE status = 'active' ORDER BY faculty_code";
+            $faculty_result = $connection->query($faculty_query);
+
+            if (!$faculty_result) {
+                echo "<!-- ERROR: " . $connection->error . " -->";
+            } else {
+                echo "<!-- DEBUG: Found " . $faculty_result->num_rows . " faculties -->";
+            }
+            
+            if ($faculty_result && $faculty_result->num_rows > 0) {
+                while ($faculty = $faculty_result->fetch_assoc()) {
+                    $faculty_code = htmlspecialchars($faculty['faculty_code']);
+                    $faculty_name = htmlspecialchars($faculty['faculty_name']);
+                    echo "<option value=\"$faculty_code\">$faculty_name ($faculty_code)</option>";
+                }
+            } 
+            // else {
+            //     // Fallback if no faculties in database
+            //     echo '<option value="BCA">BCA - Bachelor of Computer Applications</option>';
+            //     echo '<option value="BBM">BBM - Bachelor of Business Management</option>';
+            //     echo '<option value="BIM">BIM - Bachelor of Information Management</option>';
+            // }
+            ?>
+        </select>
     </div>
+    <div class="col-md-3">
+        <select class="form-select" id="semesterFilter">
+            <option value="">All Semesters</option>
+            <?php for($i = 1; $i <= 8; $i++): ?>
+                <option value="<?php echo $i; ?>">Semester <?php echo $i; ?></option>
+            <?php endfor; ?>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="statusFilter">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100" id="resetFiltersBtn">
+            <i class="bi bi-arrow-clockwise"></i> Reset Filters
+        </button>
+    </div>
+</div>
     
     <!-- Classes Container -->
     <div id="classes-container">

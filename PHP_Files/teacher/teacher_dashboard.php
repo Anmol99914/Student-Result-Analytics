@@ -29,7 +29,7 @@ $teacher_name = $_SESSION['teacher_name'];
     
     <!-- Teacher CSS -->
     <link rel="stylesheet" href="../../css/teacher_dashboard.css">
-
+    
 </head>
 <body class="teacher-wrapper">
     <!-- Navbar -->
@@ -78,6 +78,7 @@ $teacher_name = $_SESSION['teacher_name'];
                             <span>My Classes</span>
                         </a>
                     </li>
+                    
                     <!-- <li class="nav-item">
                         <a href="#" onclick="loadAddStudentForm(); return false;" class="nav-link">
                             <i class="bi bi-person-plus"></i>
@@ -96,7 +97,13 @@ $teacher_name = $_SESSION['teacher_name'];
                             <span>Enter Results</span>
                         </a>
                     </li>
-                
+
+                    <!-- <li class="nav-item">
+                        <a href="#" onclick="showBulkUploadModal(); return false;" class="nav-link">
+                            <i class="bi bi-cloud-upload"></i>
+                            <span>Bulk Upload Marks</span>
+                        </a>
+                    </li> -->
                     <li class="nav-item">
                         <a href="#" onclick="loadProfile(); return false;" class="nav-link">
                             <i class="bi bi-person"></i>
@@ -104,51 +111,6 @@ $teacher_name = $_SESSION['teacher_name'];
                         </a>
                     </li>
                 </ul>
-            </div>
-            
-            <!-- Mobile Offcanvas Sidebar -->
-            <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="offcanvasSidebar">
-                <div class="offcanvas-header bg-dark text-white">
-                    <h5 class="offcanvas-title">
-                        <i class="bi bi-person-badge me-2"></i>
-                        Teacher Panel
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-                </div>
-                <div class="offcanvas-body bg-dark text-white">
-                    <ul class="nav flex-column">
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadDashboard(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-house me-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadMyClasses(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-table me-2"></i> My Classes
-                            </a>
-                        </li>
-                        <!-- <li class="nav-item mb-2">
-                            <a href="#" onclick="loadAddStudentForm(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-person-plus me-2"></i> Add Student
-                            </a>
-                        </li> -->
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadMyStudents(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-people me-2"></i> My Students
-                            </a>
-                        </li>
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadAddResultForm(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-trophy me-2"></i> Enter Results
-                            </a>
-                        </li>
-                        <li class="nav-item mb-2">
-                            <a href="#" onclick="loadProfile(); closeOffcanvas(); return false;" class="nav-link">
-                                <i class="bi bi-person me-2"></i> My Profile
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
 
             <!-- Main Content Area -->
@@ -175,9 +137,29 @@ $teacher_name = $_SESSION['teacher_name'];
     <script src="../../js/results-marks.js"></script>
 
     <script>
-    // Pass PHP variables to JavaScript
-    window.TEACHER_ID = <?php echo json_encode($teacher_id); ?>;
-    window.TEACHER_NAME = <?php echo json_encode($teacher_name); ?>;
-    </script>
+// Pass PHP variables to JavaScript
+window.TEACHER_ID = <?php echo json_encode($teacher_id); ?>;
+window.TEACHER_NAME = <?php echo json_encode($teacher_name); ?>;
+
+    // Prevent back button cache
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+    
+    // Check session on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: ping server to check session
+        fetch('check_session.php')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.valid) {
+                    window.location.href = 'teacher_login.php';
+                }
+            });
+    });
+
+</script>
+
 </body>
 </html>

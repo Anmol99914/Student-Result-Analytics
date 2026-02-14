@@ -24,12 +24,13 @@ $result = $stmt->get_result();
 $student = $result->fetch_assoc();
 
 // Get semester performance data
+// Get semester performance data - FIXED
 $semester_sql = "SELECT 
                     sem.semester_name,
                     AVG(r.percentage) as avg_percentage
                 FROM result r
                 JOIN semester sem ON r.semester_id = sem.semester_id
-                WHERE r.student_id = ? AND r.status = 'published'
+                WHERE r.student_id = ? AND r.verification_status = 'verified'
                 GROUP BY r.semester_id
                 ORDER BY r.semester_id";
 $semester_stmt = $connection->prepare($semester_sql);
@@ -52,7 +53,7 @@ $subject_sql = "SELECT
                     r.percentage
                 FROM result r
                 JOIN subject s ON r.subject_id = s.subject_id
-                WHERE r.student_id = ? AND r.semester_id = ? AND r.status = 'published'
+                WHERE r.student_id = ? AND r.semester_id = ? AND r.verification_status = 'verified'
                 ORDER BY s.subject_name";
 $subject_stmt = $connection->prepare($subject_sql);
 $subject_stmt->bind_param("si", $student_id, $current_semester);

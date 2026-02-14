@@ -26,7 +26,7 @@ include(__DIR__ . '/../../../config.php');
                             <i class="bi bi-people text-white"></i>
                         </div>
                     </div>
-                    <a href="#" onclick="loadPage('students_list.php')" class="stretched-link text-decoration-none"></a>
+                    <!-- <a href="#" onclick="loadPage('students_list.php')" class="stretched-link text-decoration-none"></a> -->
                 </div>
             </div>
         </div>
@@ -47,7 +47,7 @@ include(__DIR__ . '/../../../config.php');
                             <i class="bi bi-person-check text-white"></i>
                         </div>
                     </div>
-                    <a href="#" onclick="loadPage('pages/teacher_management.php')" class="stretched-link text-decoration-none"></a>
+                    <!-- <a href="#" onclick="loadPage('pages/teacher_management.php')" class="stretched-link text-decoration-none"></a> -->
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@ include(__DIR__ . '/../../../config.php');
                             <i class="bi bi-mortarboard text-white"></i>
                         </div>
                     </div>
-                    <a href="#" onclick="loadPage('pages/class_management.php')" class="stretched-link text-decoration-none"></a>
+                    <!-- <a href="#" onclick="loadPage('pages/class_management.php')" class="stretched-link text-decoration-none"></a> -->
                 </div>
             </div>
         </div>
@@ -89,65 +89,82 @@ include(__DIR__ . '/../../../config.php');
                             <i class="bi bi-book text-white"></i>
                         </div>
                     </div>
-                    <a href="#" onclick="loadPage('subjects.php')" class="stretched-link text-decoration-none"></a>
+                    <!-- <a href="#" onclick="loadPage('subjects.php')" class="stretched-link text-decoration-none"></a> -->
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('pages/manage_students.php?action=add')" 
-                               class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
-                                <i class="bi bi-person-plus fs-2 mb-2"></i>
-                                <span>Add Student</span>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('pages/teacher_management.php?action=add')" 
-                               class="btn btn-outline-success w-100 d-flex flex-column align-items-center py-3">
-                                <i class="bi bi-person-plus fs-2 mb-2"></i>
-                                <span>Add Teacher</span>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('pages/class_management.php?action=add')" 
-                               class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
-                                <i class="bi bi-plus-circle fs-2 mb-2"></i>
-                                <span>Create Class</span>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-6">
-                            <a href="#" onclick="loadPage('pages/subject_management.php?action=add')" 
-                               class="btn btn-outline-warning w-100 d-flex flex-column align-items-center py-3">
-                                <i class="bi bi-person-check fs-2 mb-2"></i>
-                                <span>Manage Subjects</span>
-                            </a>
-                        </div>
-                        <div class="col-12 mt-3">
-                        <div class="row g-3">
-                            <div class="col-md-4 offset-md-4">
-                                <a href="export_results.php" 
-                                   class="btn btn-success w-100 d-flex flex-column align-items-center py-3">
-                                    <i class="bi bi-download fs-2 mb-2"></i>
-                                    <span>Export Results (Excel/PDF)</span>
-                                </a>
-                            </div>
-                        </div>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <!-- First Row - Management Actions -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3 col-6">
+                        <a href="#" onclick="loadPage('pages/manage_students.php?action=add')" 
+                           class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-person-plus fs-2 mb-2"></i>
+                            <span>Add Student</span>
+                        </a>
                     </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" onclick="loadPage('pages/teacher_management.php?action=add')" 
+                           class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-person-plus fs-2 mb-2"></i>
+                            <span>Add Teacher</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" onclick="loadPage('pages/class_management.php?action=add')" 
+                           class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-plus-circle fs-2 mb-2"></i>
+                            <span>Create Class</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" onclick="loadPage('pages/subject_management.php?action=add')" 
+                           class="btn btn-outline-warning w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-person-check fs-2 mb-2"></i>
+                            <span>Manage Subjects</span>
+                        </a>
+                    </div>
+                    <a href="add_faculty.php" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Add New Faculty
+                    </a>
+                </div>
+
+                <!-- Second Row - Analytics & Reports -->
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <a href="dashboard_stats.php" 
+                           class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-speedometer2 fs-2 mb-2"></i>
+                            <span>Dashboard Stats</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="export_results.php" 
+                           class="btn btn-success w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-download fs-2 mb-2"></i>
+                            <span>Export Results</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <!-- Placeholder for future action -->
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <!-- Placeholder for future action -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
     
     <!-- Recent Activity -->
     <div class="row">

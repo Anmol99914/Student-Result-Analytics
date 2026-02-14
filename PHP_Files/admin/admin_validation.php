@@ -2,23 +2,23 @@
 include('../../config.php');
 session_start();
 
-/* Prevent caching */
+// Prevent caching 
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 header("Expires: 0");
 
-/* Get data from form */
+// Get data from form 
 $username = trim($_POST['username'] ?? '');
 $password = trim($_POST['password'] ?? '');
 
-/* Basic validation */
+// Basic validation 
 if ($username === '' || $password === '') {
-    header("Location: admin_login.php?error=empty+fields");
+    header("Location: admin_login.php?error=empty");
     exit();
 }
 
-/* Fetch admin from database */
+// Fetch admin from database 
 $stmt = $connection->prepare(
     "SELECT admin_id, name, email, password 
      FROM administrator 
@@ -43,6 +43,6 @@ if ($admin = $result->fetch_assoc()) {
 }
 
 /* Invalid login */
-header("Location: admin_login.php?error=invalid+username+or+password");
+header("Location: admin_login.php?error=invalid");
 exit();
 ?>

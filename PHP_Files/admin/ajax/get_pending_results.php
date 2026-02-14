@@ -23,7 +23,7 @@ $sql = "SELECT r.*,
         JOIN subject sub ON r.subject_id = sub.subject_id
         JOIN class c ON s.class_id = c.class_id
         JOIN teacher t ON r.entered_by_teacher_id = t.teacher_id
-        WHERE r.verification_status != 'verified'";
+        WHERE r.verification_status = 'pending'";
 
 if ($status) {
     $sql .= " AND r.verification_status = '$status'";

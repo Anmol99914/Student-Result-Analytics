@@ -252,93 +252,115 @@ if (typeof window.ClassManager !== 'undefined') {
         showAddClassModal() {
             console.log('Creating add class modal...');
             
-            // Remove existing modal if any
+            // Remove any existing modals and backdrops first
             const existingModal = document.getElementById('addClassModal');
             if (existingModal) {
                 existingModal.remove();
             }
             
-            // Create modal HTML
-            const modalHTML = `
-                <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title" id="addClassModalLabel">
-                                    <i class="bi bi-plus-circle me-2"></i>Create New Class
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form id="addClassForm">
-                                    <div class="mb-3">
-                                        <label class="form-label">Faculty <span class="text-danger">*</span></label>
-                                        <select name="faculty" class="form-select" required>
-                                            <option value="">-- Select Faculty --</option>
-                                            <option value="BCA">BCA</option>
-                                            <option value="BBM">BBM</option>
-                                            <option value="BIM">BIM</option>
-                                            <option value="BBA">BBA</option>
-                                            <option value="BIT">BIT</option>
-                                        </select>
+            // Remove any stuck backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            
+            // Remove modal-open class from body
+            document.body.classList.remove('modal-open');
+            
+            // Fetch active faculties from database
+            fetch('/Student_Result_Analytics/PHP_Files/admin/get_faculties.php')
+                .then(response => response.json())
+                .then(faculties => {
+                    // Build faculty options
+                    let facultyOptions = '<option value="">-- Select Faculty --</option>';
+                    
+                    if (faculties && faculties.length > 0) {
+                        faculties.forEach(f => {
+                            facultyOptions += `<option value="${f.faculty_code}">${f.faculty_name} (${f.faculty_code})</option>`;
+                        });
+                    }
+                    
+                    // Create modal HTML with dynamic faculty options
+                    const modalHTML = `
+                        <div class="modal fade" id="addClassModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-plus-circle me-2"></i>Create New Class
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Semester <span class="text-danger">*</span></label>
-                                        <select name="semester" class="form-select" required>
-                                            <option value="">-- Select Semester --</option>
-                                            <option value="1">Semester 1</option>
-                                            <option value="2">Semester 2</option>
-                                            <option value="3">Semester 3</option>
-                                            <option value="4">Semester 4</option>
-                                            <option value="5">Semester 5</option>
-                                            <option value="6">Semester 6</option>
-                                            <option value="7">Semester 7</option>
-                                            <option value="8">Semester 8</option>
-                                        </select>
+                                    <div class="modal-body">
+                                        <form id="addClassForm">
+                                            <div class="mb-3">
+                                                <label class="form-label">Faculty <span class="text-danger">*</span></label>
+                                                <select name="faculty" class="form-select" required>
+                                                    ${facultyOptions}
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Semester <span class="text-danger">*</span></label>
+                                                <select name="semester" class="form-select" required>
+                                                    <option value="">-- Select Semester --</option>
+                                                    <option value="1">Semester 1</option>
+                                                    <option value="2">Semester 2</option>
+                                                    <option value="3">Semester 3</option>
+                                                    <option value="4">Semester 4</option>
+                                                    <option value="5">Semester 5</option>
+                                                    <option value="6">Semester 6</option>
+                                                    <option value="7">Semester 7</option>
+                                                    <option value="8">Semester 8</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Batch Year</label>
+                                                <input type="number" name="batch_year" class="form-control" 
+                                                       value="2026" min="2020" max="2030">
+                                            </div>
+                                        </form>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Batch Year</label>
-                                        <input type="number" name="batch_year" class="form-control" 
-                                               value="2026" min="2020" max="2030">
-                                        <small class="text-muted">Default is current year (2026)</small>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-primary" onclick="window.classManager.submitAddClassForm()">
+                                            Create Class
+                                        </button>
                                     </div>
-                                    
-                                    <div class="alert alert-info">
-                                        <i class="bi bi-info-circle"></i>
-                                        <strong>Note:</strong> Teacher assignments are now done separately 
-                                        through the "Assign Teachers" page for each class.
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-primary" onclick="window.classManager.submitAddClassForm()">
-                                    <i class="bi bi-check-circle"></i> Create Class
-                                </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add modal to body
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Show modal
-            const modalElement = document.getElementById('addClassModal');
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-            
-            // Remove modal from DOM when hidden
-            modalElement.addEventListener('hidden.bs.modal', function() {
-                setTimeout(() => {
-                    if (modalElement.parentNode) {
-                        modalElement.remove();
-                    }
-                }, 300);
-            });
+                    `;
+                    
+                    // Add modal to body
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    
+                    // Show modal
+                    const modalElement = document.getElementById('addClassModal');
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                    
+                    // Clean up properly when modal is hidden
+                    modalElement.addEventListener('hidden.bs.modal', function() {
+                        console.log('Modal hidden - cleaning up');
+                        // Remove the modal from DOM
+                        setTimeout(() => {
+                            if (modalElement.parentNode) {
+                                modalElement.remove();
+                            }
+                        }, 300);
+                        
+                        // Force remove any remaining backdrops
+                        setTimeout(() => {
+                            const backdrops = document.querySelectorAll('.modal-backdrop');
+                            backdrops.forEach(backdrop => backdrop.remove());
+                            document.body.classList.remove('modal-open');
+                        }, 400);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading faculties:', error);
+                    alert('Could not load faculties. Please refresh and try again.');
+                });
         }
         
         submitAddClassForm() {
@@ -367,9 +389,6 @@ if (typeof window.ClassManager !== 'undefined') {
             
             // Prepare form data
             const formData = new FormData(form);
-            
-            // Add additional data
-            formData.append('action', 'add_class');
             formData.append('status', 'active');
             
             // Submit via AJAX
@@ -377,7 +396,10 @@ if (typeof window.ClassManager !== 'undefined') {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
                 console.log('Add class response:', data);
                 
@@ -385,15 +407,28 @@ if (typeof window.ClassManager !== 'undefined') {
                     showAlert('success', data.message);
                     
                     // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addClassModal'));
-                    if (modal) {
-                        modal.hide();
+                    const modalElement = document.getElementById('addClassModal');
+                    if (modalElement) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
                     }
                     
-                    // Reload classes after 1 second
+                    // Reset button state
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+
+                    setTimeout(() => {
+                        const backdrops = document.querySelectorAll('.modal-backdrop');
+                        backdrops.forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                    }, 500);
+                    
+                    // Reload classes after short delay
                     setTimeout(() => {
                         this.loadClasses();
-                    }, 1000);
+                    }, 500);
                     
                 } else {
                     showAlert('danger', data.message || 'Error creating class');
@@ -402,12 +437,13 @@ if (typeof window.ClassManager !== 'undefined') {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Fetch error:', error);
                 showAlert('danger', 'Network error: ' + error.message);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             });
         }
+
         viewClassDetails(classId) {
             console.log('Viewing class details:', classId);
             

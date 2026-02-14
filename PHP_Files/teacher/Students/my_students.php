@@ -73,7 +73,9 @@ if (!empty($class_ids)) {
         .badge-faculty { background-color: #6f42c1; }
         .badge-semester { background-color: #fd7e14; }
         .table-hover tbody tr:hover { background-color: rgba(0, 123, 255, 0.05); }
+        .filter-btn.active { background-color: #0d6efd; color: white; border-color: #0d6efd; }
     </style>
+    
 </head>
 <body>
     <div class="container-fluid mt-3">
@@ -120,7 +122,7 @@ if (!empty($class_ids)) {
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2" id="class-filter">
-                        <button type="button" class="btn btn-primary" data-filter="all">
+                        <button type="button" class="btn btn-primary filter-btn active" data-filter="all">
                             All Classes <span class="badge bg-light text-dark ms-1"><?php echo count($students); ?></span>
                         </button>
                         <?php foreach ($teacher_classes as $class): 
@@ -129,7 +131,7 @@ if (!empty($class_ids)) {
                             });
                             $student_count = count($class_students);
                         ?>
-                        <button type="button" class="btn btn-outline-secondary" 
+                        <button type="button" class="btn btn-outline-secondary filter-btn" 
                                 data-filter="class-<?php echo $class['class_id']; ?>">
                             <?php echo htmlspecialchars($class['faculty']); ?> Sem <?php echo $class['semester']; ?>
                             <span class="badge bg-secondary ms-1"><?php echo $student_count; ?></span>
@@ -166,7 +168,6 @@ if (!empty($class_ids)) {
                                     <th>Class</th>
                                     <th>Semester</th>
                                     <th>Phone</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -192,13 +193,6 @@ if (!empty($class_ids)) {
                                         </span>
                                     </td>
                                     <td><code><?php echo htmlspecialchars($phone); ?></code></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="viewStudentResults('<?php echo $student['student_id']; ?>')"
-                                                title="View Results">
-                                            <i class="bi bi-trophy"></i>
-                                        </button>
-                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -209,66 +203,7 @@ if (!empty($class_ids)) {
         <?php endif; ?>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Simple filter functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const filterButtons = document.querySelectorAll('#class-filter button[data-filter]');
-            const searchInput = document.getElementById('search-student');
-            const tableRows = document.querySelectorAll('#students-table tbody tr');
-            
-            // Filter by class
-            filterButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const filterValue = this.dataset.filter;
-                    
-                    filterButtons.forEach(btn => {
-                        btn.classList.remove('btn-primary', 'active');
-                        btn.classList.add('btn-outline-secondary');
-                    });
-                    this.classList.add('btn-primary', 'active');
-                    this.classList.remove('btn-outline-secondary');
-                    
-                    filterTable(filterValue, searchInput.value.toLowerCase());
-                });
-            });
-            
-            // Search functionality
-            searchInput?.addEventListener('input', function() {
-                const activeFilter = document.querySelector('#class-filter .btn-primary')?.dataset.filter || 'all';
-                filterTable(activeFilter, this.value.toLowerCase());
-            });
-            
-            function filterTable(classFilter, searchTerm = '') {
-                let visibleCount = 0;
-                
-                tableRows.forEach(row => {
-                    const classId = 'class-' + row.dataset.classId;
-                    const name = row.cells[1].textContent.toLowerCase();
-                    const id = row.cells[0].textContent.toLowerCase();
-                    const email = row.cells[2].textContent.toLowerCase();
-                    
-                    const matchesClass = classFilter === 'all' || classId === classFilter;
-                    const matchesSearch = searchTerm === '' || 
-                                         name.includes(searchTerm) || 
-                                         id.includes(searchTerm) || 
-                                         email.includes(searchTerm);
-                    
-                    if (matchesClass && matchesSearch) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-            
-            // View student results
-            window.viewStudentResults = function(studentId) {
-                // Redirect to student results page
-                window.location.href = `../student/results.php?student_id=${studentId}`;
-            };
-        });
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/Student_Result_Analytics/js/teacher/student-filter.js"></script>
 </body>
 </html>

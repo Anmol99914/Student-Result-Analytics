@@ -21,7 +21,6 @@ if (!$result_id || !$action) {
 
 try {
     if ($action === 'approve') {
-        // 🔥 FIX: Set status to 'published' NOT 'verified'
         $sql = "UPDATE result SET 
                 verification_status = 'verified', 
                 status = 'published',

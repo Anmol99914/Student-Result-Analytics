@@ -474,32 +474,34 @@ calculateAllGrades: function() {
             if (data.success) {
                 log('Save successful:', data);
                 
-                // ✅ Calculate values
+                // Calculate values
                 const inserted = data.summary?.inserted || 0;
                 const updated = data.summary?.updated || 0;
                 const skipped = data.summary?.skipped || 0;
                 const verifiedSkipped = data.summary?.verified_skipped || 0;
                 const savedCount = inserted + updated;
                 
-                // ✅ Show success toast
+                // Show success toast
                 this.showToast(
-                    `✅ Saved marks for ${savedCount} student(s)`,
+                    `Saved marks for ${savedCount} student(s)`,
                     'success',
                     3000
                 );
                 
-                // ✅ Update status badges
+                this.refreshTableData();
+
+                // Update status badges
                 this.updateStatusToPending();
                 
-                // ✅ Calculate grades
+                // Calculate grades
                 this.calculateAllGrades();
                 
-                // ✅ Reset save button
+                // Reset save button
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Marks';
                 
-                // ✅ Show success message (ONCE!)
-                const message = data.message || `✅ Saved marks for ${savedCount} student(s)`;
+                // Show success message (ONCE!)
+                const message = data.message || `Saved marks for ${savedCount} student(s)`;
                 
                 // Remove any existing success messages
                 const existingAlerts = document.querySelectorAll('.alert-success');
@@ -513,7 +515,7 @@ calculateAllGrades: function() {
                 `;
                 
                 if (skipped > 0 || verifiedSkipped > 0) {
-                    successHtml += `<br><small class="text-muted">⚠️ ${skipped} student(s) were skipped (verified or empty)</small>`;
+                    successHtml += `<br><small class="text-muted">Error: ${skipped} student(s) were skipped (verified or empty)</small>`;
                 }
                 
                 successHtml += `<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
@@ -526,20 +528,71 @@ calculateAllGrades: function() {
                 
                 
             } else {
-                this.showToast('❌ Error: ' + (data.message || 'Failed to save'), 'danger', 5000);
+                this.showToast('Error: ' + (data.message || 'Failed to save'), 'danger', 5000);
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalText;
             }
         })
         .catch(error => {
             log('Save error:', error);
-            this.showToast('❌ Network error: ' + error.message, 'danger', 5000);
+            this.showToast('Network error: ' + error.message, 'danger', 5000);
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalText;
         });
         
         return false;
     },
+
+    // To refresh the table data
+refreshTableData: function() {
+    log('Refreshing table data...');
+    
+    const classId = currentClassId;
+    const subjectId = currentSubjectId;
+    const subjectName = currentSubjectName;
+    
+    // Show loading on table
+    const tableContainer = document.querySelector('.table-responsive');
+    if (tableContainer) {
+        tableContainer.style.opacity = '0.5';
+    }
+    
+    // Fetch fresh data
+    fetch(`Results/get_students_for_marks.php?class_id=${classId}&subject_id=${subjectId}&subject_name=${encodeURIComponent(subjectName)}`)
+        .then(response => response.text())
+        .then(html => {
+            // Parse the HTML to get just the table
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('table');
+            const newMarksContainer = doc.getElementById('marksContainer');
+            
+            if (newTable && newMarksContainer) {
+                // Replace the table
+                const oldTable = document.querySelector('table');
+                if (oldTable) {
+                    oldTable.innerHTML = newTable.innerHTML;
+                }
+                
+                // Re-attach event listeners
+                this.attachMarksListeners();
+                this.calculateAllGrades();
+                
+                log('Table refreshed successfully');
+            }
+            
+            // Restore opacity
+            if (tableContainer) {
+                tableContainer.style.opacity = '1';
+            }
+        })
+        .catch(error => {
+            log('Error refreshing table:', error);
+            if (tableContainer) {
+                tableContainer.style.opacity = '1';
+            }
+        });
+},
         
         // Test function
         test: function() {

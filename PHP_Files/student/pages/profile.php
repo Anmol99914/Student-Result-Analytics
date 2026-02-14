@@ -75,9 +75,7 @@ $created_date = date('d M Y', strtotime($student['created_at']));
                         <i class="bi bi-person-vcard text-primary me-2"></i>
                         Personal Information
                     </h5>
-                    <button class="btn btn-sm btn-outline-primary" disabled>
-                        <i class="bi bi-pencil me-1"></i> Edit (Contact Admin)
-                    </button>
+                    
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -147,47 +145,9 @@ $created_date = date('d M Y', strtotime($student['created_at']));
                         </div>
                     </div>
                     
-                    <!-- Account Info -->
-                    <div class="mt-4 pt-3 border-top">
-                        <h6 class="mb-3">
-                            <i class="bi bi-shield-check text-warning me-2"></i>
-                            Account Security
-                        </h6>
-                        <div class="alert alert-warning small">
-                            <i class="bi bi-info-circle me-2"></i>
-                            For password change or profile updates, please contact the administration office.
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-secondary" disabled>
-                                <i class="bi bi-key me-2"></i> Change Password
-                            </button>
-                            <a href="mailto:admin@college.edu" class="btn btn-outline-primary">
-                                <i class="bi bi-envelope me-2"></i> Contact Admin
-                            </a>
-                        </div>
+                    
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-<script>
-// Email copy functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const emailElement = document.querySelector('.student-email');
-    if (emailElement) {
-        emailElement.addEventListener('click', function() {
-            const email = this.textContent.trim();
-            navigator.clipboard.writeText(email)
-                .then(() => {
-                    alert('Email copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                });
-        });
-        emailElement.style.cursor = 'pointer';
-        emailElement.title = 'Click to copy';
-    }
-});
-</script>

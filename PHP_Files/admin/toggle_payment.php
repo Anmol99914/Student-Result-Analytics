@@ -18,9 +18,20 @@ if (!$student_id || !$status) {
 }
 
 // Get student's current semester
-$semester_sql = "SELECT c.semester 
-                 FROM student s
-                 JOIN class c ON s.class_id = c.class_id
+// $semester_sql = "SELECT c.semester 
+//                  FROM student s
+//                  JOIN class c ON s.class_id = c.class_id
+//                  WHERE s.student_id = ?";
+// $semester_stmt = $connection->prepare($semester_sql);
+// $semester_stmt->bind_param("s", $student_id);
+// $semester_stmt->execute();
+// $semester_result = $semester_stmt->get_result();
+// $semester_data = $semester_result->fetch_assoc();
+// $semester = $semester_data['semester'] ?? 1;
+
+// Get student's current semester
+$semester_sql = "SELECT semester FROM class c 
+                 JOIN student s ON s.class_id = c.class_id 
                  WHERE s.student_id = ?";
 $semester_stmt = $connection->prepare($semester_sql);
 $semester_stmt->bind_param("s", $student_id);
@@ -28,6 +39,12 @@ $semester_stmt->execute();
 $semester_result = $semester_stmt->get_result();
 $semester_data = $semester_result->fetch_assoc();
 $semester = $semester_data['semester'] ?? 1;
+
+// Insert with semester
+$insert_sql = "INSERT INTO payment (student_id, semester, total_amount, amount_paid, payment_status, payment_date, is_latest) 
+               VALUES (?, ?, ?, ?, ?, NOW(), 1)";
+$insert_stmt = $connection->prepare($insert_sql);
+$insert_stmt->bind_param("sidds", $student_id, $semester, $total_amount, $amount_paid, $new_status);
 
 // Begin transaction
 $connection->begin_transaction();

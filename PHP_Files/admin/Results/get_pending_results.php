@@ -220,43 +220,49 @@ function rejectResult(resultId) {
     console.log('Rejecting:', resultId);
     
     const reason = prompt('Enter rejection reason (optional):');
-    if (reason !== null) {
-        // Show loading on button
-        const btn = document.querySelector(`[onclick*="rejectResult(${resultId})"]`);
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        btn.disabled = true;
-        
-        fetch('Results/update_verification.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'result_id=' + resultId + '&status=rejected&reason=' + encodeURIComponent(reason)
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Restore button
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            
-            if (data.success) {
-                alert('✅ Result rejected!');
-                // Remove the row
-                const row = document.querySelector(`tr[data-result-id="${resultId}"]`);
-                if (row) row.remove();
-                
-                // Update counts
-                updateCounters();
-            } else {
-                alert('❌ Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            alert('Failed to reject result');
-        });
+    
+    // If user cancels (null), do nothing
+    if (reason === null) {
+        return;
     }
+    
+    // Show loading on button
+    const btn = document.querySelector(`[onclick*="rejectResult(${resultId})"]`);
+    if (!btn) return;
+    
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    btn.disabled = true;
+    
+    fetch('Results/update_verification.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'result_id=' + resultId + '&status=rejected&reason=' + encodeURIComponent(reason || '') // Send empty string if no reason
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        
+        if (data.success) {
+            alert('Result rejected!');
+            // Remove the row
+            const row = document.querySelector(`tr[data-result-id="${resultId}"]`);
+            if (row) row.remove();
+            
+            // Update counts
+            updateCounters();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        alert('Failed to reject result');
+    });
 }
 
 // Update counters (pending count, stats)
@@ -304,7 +310,7 @@ window.verifyResult = verifyResult;
 window.rejectResult = rejectResult;
 window.updateCounters = updateCounters;
 
-console.log('✅ All functions ready:', {
+console.log('All functions ready:', {
     viewResultDetails: typeof viewResultDetails,
     verifyResult: typeof verifyResult,
     rejectResult: typeof rejectResult

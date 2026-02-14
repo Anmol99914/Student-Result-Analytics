@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
 $faculty = $_GET['faculty'] ?? '';
 $semester = $_GET['semester'] ?? '';
 $page = $_GET['page'] ?? 1;
-$limit = 20;
+$limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Build query
@@ -70,6 +70,88 @@ $total_result = $connection->query($total_count_sql);
 $total_verified = $total_result->fetch_assoc()['total'];
 ?>
 
+<style>
+    /* Fix table column widths and spacing */
+    .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    /* Set specific widths for each column */
+    .table th:nth-child(1) { width: 40px; }  /* # */
+    .table th:nth-child(2) { width: 120px; } /* Student */
+    .table th:nth-child(3) { width: 80px; }  /* ID */
+    .table th:nth-child(4) { width: 150px; } /* Subject */
+    .table th:nth-child(5) { width: 120px; } /* Class */
+    .table th:nth-child(6) { width: 120px; } /* Marks */
+    .table th:nth-child(7) { width: 60px; }  /* Grade */
+    .table th:nth-child(8) { width: 120px; } /* Teacher */
+    .table th:nth-child(9) { width: 100px; } /* Verified On */
+    .table th:nth-child(10) { width: 80px; } /* Status */
+    
+    /* Better text alignment */
+    .table td, .table th {
+        vertical-align: middle !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 8px 6px !important;
+    }
+    
+    /* Allow wrapping for longer content */
+    .table td:nth-child(2),  /* Student name */
+    .table td:nth-child(4),  /* Subject */
+    .table td:nth-child(8) { /* Teacher */
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    /* Center align certain columns */
+    .table td:nth-child(1),  /* # */
+    .table td:nth-child(3),  /* ID */
+    .table td:nth-child(6),  /* Marks */
+    .table td:nth-child(7),  /* Grade */
+    .table td:nth-child(10) { /* Status */
+        text-align: center;
+    }
+    
+    /* Marks section styling */
+    .marks-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    
+    .marks-badge {
+        background: #0073e6;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .percentage-badge {
+        font-size: 0.75rem;
+        padding: 2px 6px;
+    }
+    
+    /* Grade badges */
+    .grade-A, .grade-B, .grade-C, .grade-D {
+        display: inline-block;
+        min-width: 35px;
+        text-align: center;
+        padding: 3px 8px !important;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    
+    .grade-A { background: #28a745; color: white; }
+    .grade-B { background: #17a2b8; color: white; }
+    .grade-C { background: #ffc107; color: black; }
+    .grade-D { background: #dc3545; color: white; }
+</style>
+
 <!-- Content only - no <html>, <head>, <body> -->
 <div class="container-fluid py-4" id="verified-results-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -104,9 +186,20 @@ $total_verified = $total_result->fetch_assoc()['total'];
                             <label class="form-label">Faculty</label>
                             <select name="faculty" id="filter-faculty" class="form-select">
                                 <option value="">All Faculties</option>
-                                <option value="BCA" <?= $faculty == 'BCA' ? 'selected' : '' ?>>BCA</option>
-                                <option value="BBM" <?= $faculty == 'BBM' ? 'selected' : '' ?>>BBM</option>
-                                <option value="BIM" <?= $faculty == 'BIM' ? 'selected' : '' ?>>BIM</option>
+                                <?php
+                                // Fetch all active faculties from database
+                                $faculty_query = "SELECT faculty_code, faculty_name FROM faculty WHERE status = 'active' ORDER BY faculty_code";
+                                $faculty_result = $connection->query($faculty_query);
+                                
+                                if ($faculty_result && $faculty_result->num_rows > 0) {
+                                    while ($faculty_row = $faculty_result->fetch_assoc()) {
+                                        $faculty_code = htmlspecialchars($faculty_row['faculty_code']);
+                                        $faculty_name = htmlspecialchars($faculty_row['faculty_name']);
+                                        $selected = ($faculty == $faculty_code) ? 'selected' : '';
+                                        echo "<option value=\"$faculty_code\" $selected>$faculty_name ($faculty_code)</option>";
+                                    }
+                                }
+                                ?>
                             </select>
                         </div>
                         <div class="col-md-5">
@@ -191,13 +284,12 @@ $total_verified = $total_result->fetch_assoc()['total'];
                                 <div class="text-primary fw-medium"><?= htmlspecialchars($class_name) ?></div>
                             </td>
                             <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold"><?= $marks_obtained ?></span>
-                                    <span class="text-muted">/ <?= $total_marks_value ?></span>
+                                <div class="marks-container">
+                                    <span class="fw-bold"><?= $marks_obtained ?>/<?= $total_marks_value ?></span>
                                     <?php if($percentage): ?>
-                                    <span class="badge <?= $percentage >= 80 ? 'bg-success' : ($percentage >= 60 ? 'bg-warning' : 'bg-danger') ?>">
-                                        <?= round($percentage, 1) ?>%
-                                    </span>
+                                        <span class="percentage-badge badge <?= $percentage >= 80 ? 'bg-success' : ($percentage >= 60 ? 'bg-warning' : 'bg-danger') ?>">
+                                            <?= round($percentage, 1) ?>%
+                                        </span>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -257,19 +349,39 @@ $total_verified = $total_result->fetch_assoc()['total'];
             </div>
             
             <!-- Pagination -->
-            <?php
-            // Count total records for pagination
-            $count_sql = "SELECT COUNT(*) as total FROM result r
-                         JOIN student stu ON r.student_id = stu.student_id
-                         JOIN class c ON stu.class_id = c.class_id
-                         WHERE r.verification_status = 'verified'";
-            
-            if ($faculty) $count_sql .= " AND c.faculty = '$faculty'";
-            if ($semester) $count_sql .= " AND c.semester = $semester";
-            
-            $count_result = $connection->query($count_sql);
-            $total_records = $count_result->fetch_assoc()['total'];
-            $total_pages = ceil($total_records / $limit);
+<?php
+// Count total records for pagination - WITH SAME FILTERS
+$count_sql = "SELECT COUNT(*) as total FROM result r
+             JOIN student stu ON r.student_id = stu.student_id
+             JOIN class c ON stu.class_id = c.class_id
+             WHERE r.verification_status = 'verified'";
+
+$count_params = [];
+$count_types = '';
+
+if ($faculty) {
+    $count_sql .= " AND c.faculty = ?";
+    $count_params[] = $faculty;
+    $count_types .= 's';
+}
+
+if ($semester) {
+    $count_sql .= " AND c.semester = ?";
+    $count_params[] = $semester;
+    $count_types .= 'i';
+}
+
+$count_stmt = $connection->prepare($count_sql);
+if ($count_params) {
+    $count_stmt->bind_param($count_types, ...$count_params);
+}
+$count_stmt->execute();
+$count_result = $count_stmt->get_result();
+$total_records = $count_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $limit);
+
+// Debug - remove after fixing
+echo "<!-- DEBUG: Total records: $total_records, Page: $page, Limit: $limit -->";
             
             if ($total_pages > 1):
             ?>
@@ -308,8 +420,8 @@ $total_verified = $total_result->fetch_assoc()['total'];
                 </ul>
             </nav>
             <div class="text-center text-muted small">
-                Showing <?= ($page-1)*$limit + 1 ?> to <?= min($page*$limit, $total_records) ?> of <?= $total_records ?> verified results
-            </div>
+                    Showing <?= ($page-1)*$limit + 1 ?> to <?= min($page*$limit, $total_records) ?> of <?= $total_records ?> verified results
+                </div>
             <?php endif; ?>
             
             <?php else: ?>
@@ -323,11 +435,7 @@ $total_verified = $total_result->fetch_assoc()['total'];
                     Verified results will appear here.
                 </p>
                 <div class="mt-3">
-                    <?php if($faculty || $semester): ?>
-                    <button onclick="loadVerifiedPage(1, '', '')" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Clear Filters
-                    </button>
-                    <?php endif; ?>
+                   
                     <button onclick="loadResultsVerification()" class="btn btn-primary ms-2">
                         <i class="bi bi-clock"></i> Check Pending Results
                     </button>
@@ -338,42 +446,77 @@ $total_verified = $total_result->fetch_assoc()['total'];
     </div>
 </div>
 
-<!-- Minimal JavaScript for this page -->
+<!-- Simple JavaScript for this page - MATCHES WORKING PATTERN -->
 <script>
-// Function to load verified results with pagination and filters
-function loadVerifiedPage(page = 1) {
-    const faculty = document.getElementById('filter-faculty')?.value || '';
-    const semester = document.getElementById('filter-semester')?.value || '';
+document.getElementById('verified-filter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const faculty = document.getElementById('filter-faculty').value;
+    const semester = document.getElementById('filter-semester').value;
+    
+    let url = 'Results/view_verified.php?page=1';
+    const params = [];
+    if (faculty) params.push('faculty=' + encodeURIComponent(faculty));
+    if (semester) params.push('semester=' + semester);
+    if (params.length) url += '&' + params.join('&');
+    
+    console.log('Filtering to:', url);
+    
+    if (typeof loadPage === 'function') {
+        loadPage(url);
+    }
+});
+
+// Clear filters button
+const clearBtn = document.getElementById('clear-filters');
+if (clearBtn) {
+    clearBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('filter-faculty').value = '';
+        document.getElementById('filter-semester').value = '';
+        
+        if (typeof loadPage === 'function') {
+            loadPage('Results/view_verified.php');
+        }
+    });
+}
+
+
+</script>
+
+<script>
+    // Make sure loadVerifiedPage is available
+window.loadVerifiedPage = function(page) {
+    console.log('loadVerifiedPage called with page:', page);
+    
+    // Check if filter elements exist
+    const facultyElement = document.getElementById('filter-faculty');
+    const semesterElement = document.getElementById('filter-semester');
+    
+    let faculty = '';
+    let semester = '';
+    
+    // Only get values if elements exist
+    if (facultyElement) {
+        faculty = facultyElement.value;
+    }
+    
+    if (semesterElement) {
+        semester = semesterElement.value;
+    }
     
     // Build URL
     let url = 'Results/view_verified.php?page=' + page;
     if (faculty) url += '&faculty=' + encodeURIComponent(faculty);
     if (semester) url += '&semester=' + semester;
     
-    // Use global loadPage function
+    console.log('Loading URL:', url);
+    
     if (typeof loadPage === 'function') {
         loadPage(url);
+    } else {
+        // Fallback
+        window.location.href = url;
     }
-}
-
-// Handle form submission
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('verified-filter-form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            loadVerifiedPage(1);
-        });
-    }
-    
-    // Clear filters button
-    const clearBtn = document.getElementById('clear-filters');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            document.getElementById('filter-faculty').value = '';
-            document.getElementById('filter-semester').value = '';
-            loadVerifiedPage(1);
-        });
-    }
-});
+};
 </script>

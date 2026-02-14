@@ -257,6 +257,91 @@
                 font-size: 1.8rem;
             }
         }
+
+        /* fix */
+        /* Floating label container */
+.floating-label {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+/* Input field styling */
+.floating-label .form-control {
+    padding: 14px 18px;
+    height: auto;
+    background: #f8fafc !important;
+}
+
+/* When input has value or is focused - move label up LESS */
+.floating-label .form-control:focus ~ .floating-text,
+.floating-label .form-control:not(:placeholder-shown) ~ .floating-text {
+    transform: translateY(-25px) scale(0.9); /* Changed from -35px to -25px */
+    color: var(--admin-primary);
+    font-weight: 600;
+    background: white;
+    padding: 0 8px;
+    left: 15px;
+    top: 30px; /* Adjusted from 35px to 30px */
+}
+
+/* Default label position - INSIDE the input */
+.floating-text {
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    transform: none;
+    background: transparent;
+    padding: 0 5px;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
+    z-index: 1;
+}
+
+/* Label when moved up - with white background */
+.floating-label .form-control:focus ~ .floating-text,
+.floating-label .form-control:not(:placeholder-shown) ~ .floating-text {
+    background: white;
+    top: -2px; /* Changed from -8px to -2px (moves down) */
+    left: 15px;
+    font-size: 0.9rem;
+    padding: 0 6px;
+    border-left: 2px solid var(--admin-primary);
+    border-right: 2px solid var(--admin-primary);
+    border-radius: 4px;
+}
+
+/* Ensure input text is always visible */
+.form-control {
+    position: relative;
+    z-index: 2;
+}
+
+/* Keep background white on focus */
+.form-control:focus {
+    background: white !important;
+}
+
+/* Keep placeholder visible */
+.floating-label .form-control::placeholder {
+    color: #a0aec0;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+/* When input is focused or has value, fade the placeholder */
+.floating-label .form-control:focus::placeholder,
+.floating-label .form-control:not(:placeholder-shown)::placeholder {
+    opacity: 0.5;
+}
+
+/* Ensure placeholder is always visible enough */
+.floating-label .form-control::placeholder {
+    color: #a0aec0;
+    font-size: 1rem;
+}
     </style>
 </head>
 
@@ -282,37 +367,39 @@
                 <h2>Administrator Portal</h2>
             </div>
 
-            <?php
-            // Error messages
-            $error_msg = '';
-            if(isset($_GET['error'])){
-                if($_GET['error'] === "invalid"){
-                    $error_msg = "Invalid administrator credentials!";
-                } elseif ($_GET['error'] === "session_expired") {
-                    $error_msg = "Session expired. Please login again.";
-                } elseif ($_GET['error'] === "unauthorized") {
-                    $error_msg = "Unauthorized access attempt!";
-                }
-            }
-            
-            if($error_msg): ?>
-            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill fs-5 me-3"></i>
-                    <div>
-                        <strong class="d-block">Authentication Failed</strong>
-                        <span class="small"><?php echo $error_msg; ?></span>
-                    </div>
+                    <?php
+        // Error messages
+        $error_msg = '';
+        $error_type = $_GET['error'] ?? '';
+
+        if ($error_type === "invalid") {
+            $error_msg = "Invalid administrator credentials!";
+        } elseif ($error_type === "empty") {
+            $error_msg = "Please fill in all fields.";
+        } elseif ($error_type === "session_expired") {
+            $error_msg = "Session expired. Please login again.";
+        } elseif ($error_type === "unauthorized") {
+            $error_msg = "Unauthorized access attempt!";
+        }
+
+        if($error_msg): ?>
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-3"></i>
+                <div>
+                    <strong class="d-block">Authentication Failed</strong>
+                    <span class="small"><?php echo $error_msg; ?></span>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <?php endif; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
 
             <!-- Login Form -->
             <form action="admin_validation.php" method="POST" name="admin_form" id="adminForm" class="needs-validation" novalidate>
                 <div class="floating-label">
                     <input type="text" class="form-control" id="username" name="username" 
-                           placeholder=" " required autocomplete="username">
+                           placeholder="Enter your username" required autocomplete="username">
                     <label class="floating-text" for="username">
                         <i class="bi bi-person-badge me-2"></i>Administrator Username
                     </label>
@@ -323,7 +410,7 @@
                 
                 <div class="floating-label">
                     <input type="password" class="form-control" id="password" name="password" 
-                           placeholder=" " required autocomplete="current-password">
+                           placeholder="Enter your password" required autocomplete="current-password">
                     <label class="floating-text" for="password">
                         <i class="bi bi-key me-2"></i>Password
                     </label>
@@ -402,131 +489,9 @@
                 loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying Credentials...';
                 loginBtn.disabled = true;
                 
-                // Add loading animation to button
-                loginBtn.style.opacity = '0.9';
-                
-                // Submit form
-                const formData = new FormData(form);
-                
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        return response.text();
-                    }
-                })
-                .then(data => {
-                    if (data) {
-                        try {
-                            const result = JSON.parse(data);
-                            if (result.success) {
-                                // Add success animation
-                                loginBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Access Granted!';
-                                loginBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                                
-                                // Redirect after short delay
-                                setTimeout(() => {
-                                    window.location.href = 'admin_dashboard.php';
-                                }, 600);
-                            } else {
-                                window.location.href = 'admin_login.php?error=invalid';
-                            }
-                        } catch (e) {
-                            window.location.href = 'admin_login.php?error=invalid';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    window.location.href = 'admin_login.php?error=invalid';
-                })
-                .finally(() => {
-                    // Reset button after 2 seconds if not redirected
-                    setTimeout(() => {
-                        loginBtn.innerHTML = originalText;
-                        loginBtn.disabled = false;
-                        loginBtn.style.opacity = '1';
-                        loginBtn.style.background = '';
-                    }, 2000);
-                });
-            });
-            
-            // Input animations
-            const inputs = document.querySelectorAll('.form-control');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('focused');
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('focused');
-                });
-            });
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Ctrl + Enter to submit
-                if (e.ctrlKey && e.key === 'Enter') {
-                    form.dispatchEvent(new Event('submit'));
-                }
-            });
-            
-            // Add focus effect to button
-            loginBtn.addEventListener('mouseenter', function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(-3px)';
-                }
-            });
-            
-            loginBtn.addEventListener('mouseleave', function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(0)';
-                }
-            });
-            
-            // Add ripple effect to button
-            loginBtn.addEventListener('click', function(e) {
-                if (this.disabled) return;
-                
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const ripple = document.createElement('span');
-                ripple.style.position = 'absolute';
-                ripple.style.borderRadius = '50%';
-                ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-                ripple.style.transform = 'scale(0)';
-                ripple.style.animation = 'ripple 0.6s linear';
-                ripple.style.left = x + 'px';
-                ripple.style.top = y + 'px';
-                
-                this.style.position = 'relative';
-                this.style.overflow = 'hidden';
-                this.appendChild(ripple);
-                
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            });
-        });
-        
-        // Add CSS for ripple animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes ripple {
-                to {
-                    transform: scale(4);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
+                form.submit();
+
+               
         
         // Handle back button cache
         window.addEventListener('pageshow', function (event) {

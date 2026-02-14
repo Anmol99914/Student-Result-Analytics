@@ -15,39 +15,9 @@ class VerifiedResults {
     }
     
     bindEvents() {
-        // Filter form submission
-        const filterForm = document.getElementById('verified-filter-form');
-        if (filterForm) {
-            filterForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.faculty = document.getElementById('filter-faculty').value;
-                this.semester = document.getElementById('filter-semester').value;
-                this.loadPage(1);
-            });
-        }
-        
-        // Clear filters button
-        const clearBtn = document.getElementById('clear-filters');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                document.getElementById('filter-faculty').value = '';
-                document.getElementById('filter-semester').value = '';
-                this.faculty = '';
-                this.semester = '';
-                this.loadPage(1);
-            });
-        }
-        
-        // Back to pending button
-        const backBtn = document.querySelector('[onclick="loadResultsVerification()"]');
-        if (backBtn) {
-            backBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof loadResultsVerification === 'function') {
-                    loadResultsVerification();
-                }
-            });
-        }
+        console.log('VerifiedResults bindEvents - using inline script for forms');
+        // Just load stats, let inline script handle form
+        this.loadStats();
     }
     
     loadPage(page = 1) {

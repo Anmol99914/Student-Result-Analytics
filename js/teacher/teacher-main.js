@@ -343,19 +343,7 @@ function loadHomeContent() {
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="card dashboard-card border-success">
-                    <div class="card-body text-center">
-                        <i class="bi bi-person-plus display-4 text-success mb-3"></i>
-                        <h5 class="card-title">Add Student</h5>
-                        <p class="card-text">Register new students to your class</p>
-                        <button class="btn btn-outline-success" onclick="loadAddStudentForm()">
-                            Add Student
-                        </button>
-                    </div>
-                </div>
-            </div>
+        
             
             <div class="col-md-4">
                 <div class="card dashboard-card border-warning">
