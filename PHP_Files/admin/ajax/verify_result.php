@@ -53,6 +53,7 @@ try {
     }
     
     if ($stmt->execute()) {
+        error_log("RESULT_VERIFIED: Class ID will be determined from result");
         echo json_encode(['success' => true, 'message' => 'Result ' . $action . 'd successfully']);
     } else {
         throw new Exception($stmt->error);

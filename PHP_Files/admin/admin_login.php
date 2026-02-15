@@ -419,17 +419,6 @@
                     </div>
                 </div>
                 
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
-                        <label class="form-check-label text-muted" for="remember">
-                            <i class="bi bi-clock-history me-1"></i>Remember this device
-                        </label>
-                    </div>
-                    <a href="#" class="help-link small">
-                        <i class="bi bi-question-circle me-1"></i>Need assistance?
-                    </a>
-                </div>
                 
                 <button type="submit" class="btn btn-admin w-100" id="loginBtn">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Access Dashboard

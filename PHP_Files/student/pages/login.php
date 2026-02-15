@@ -104,13 +104,7 @@ if(isset($_GET['error'])){
             </div>
             
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
-                    <label class="form-check-label text-muted" for="remember">
-                        <i class="bi bi-clock-history me-1"></i>Remember me
-                    </label>
-                </div>
-                <a href="#" class="help-links small">
+                <a href="#" class="help-links small" onclick="showForgotPasswordModal()">
                     <i class="bi bi-question-circle me-1"></i>Forgot password?
                 </a>
             </div>
@@ -119,12 +113,81 @@ if(isset($_GET['error'])){
                 <i class="bi bi-box-arrow-in-right me-2"></i>Access Student Dashboard
             </button>
         </form>
-        
+        <br>
+        <br>
         <!-- Copyright -->
         <div class="copyright">
-            <p class="mb-2">© 2025 Student Result Analytics System</p>
+            <p class="mb-2">© 2026 Student Result Analytics</p>
         </div>
     </div>
 </div>
 
+<script>
+    // Forgot Password Modal
+function showForgotPasswordModal() {
+    const modalHtml = `
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-key me-2"></i>
+                            Reset Password
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-shield-lock display-1 text-primary"></i>
+                        </div>
+                        <p class="text-center">For password reset, please contact the administrator:</p>
+                        
+                        <div class="list-group">
+                            <div class="list-group-item d-flex align-items-center">
+                                <i class="bi bi-envelope-fill text-primary me-3 fs-4"></i>
+                                <div>
+                                    <small class="text-muted">Email</small>
+                                    <div class="fw-bold">giria4621@gmail.com</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary ms-auto" onclick="copyText('giria4621@gmail.com')">
+                                    <i class="bi bi-files"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="list-group-item d-flex align-items-center">
+                                <i class="bi bi-telephone-fill text-primary me-3 fs-4"></i>
+                                <div>
+                                    <small class="text-muted">Phone</small>
+                                    <div class="fw-bold">+977 9818118344</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary ms-auto" onclick="copyText('+977 9818118344')">
+                                    <i class="bi bi-files"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('forgotPasswordModal');
+    if (existingModal) existingModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+    modal.show();
+    
+    document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => alert('Copied to clipboard!'))
+        .catch(() => alert('Failed to copy'));
+}
+</script>
 <?php require_once '../includes/footer.php'; ?>

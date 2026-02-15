@@ -122,7 +122,7 @@ $teacher_name = $_SESSION['teacher_name'];
 
     <!-- Footer -->
     <footer class="mt-auto bg-light text-center py-2 border-top teacher-footer">
-        © 2025 Student Result Analytics | Teacher Panel
+        © 2026 Student Result Analytics | Teacher Panel
     </footer>
 
     <!-- JavaScript Libraries -->

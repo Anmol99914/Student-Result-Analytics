@@ -76,7 +76,7 @@ if (!$teacher) {
         </div>
 
         <!-- Change Password Card -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-warning">
                     <h5 class="mb-0"><i class="bi bi-key me-2"></i>Change Password</h5>
@@ -103,12 +103,12 @@ if (!$teacher) {
                     </form>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 
 <!-- Password Change Script -->
-<script>
+<!-- <script>
 document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -163,4 +163,4 @@ document.getElementById('changePasswordForm').addEventListener('submit', functio
         messageDiv.innerHTML = '<div class="alert alert-danger">Network error. Please try again.</div>';
     });
 });
-</script>
+</script> -->

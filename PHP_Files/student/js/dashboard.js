@@ -138,9 +138,8 @@ function loadPage(url) {
         });
 }
 
-/**
- * Initialize page-specific scripts
- */
+// Initialize page-specific scripts
+
 function initPageScripts(pageUrl) {
     const page = pageUrl.split('/').pop();
     

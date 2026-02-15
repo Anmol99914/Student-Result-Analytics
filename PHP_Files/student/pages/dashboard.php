@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="#">
             <i class="bi bi-mortarboard-fill me-2"></i>
-            Student Portal
+            Student Dashboard
         </a>
         
         <div class="ms-auto d-flex align-items-center">
@@ -138,11 +138,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="bi bi-gear"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="../pages/profile.php">
-                        <i class="bi bi-person me-2"></i>Profile</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="../api/logout.php">
-                        <i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    <!-- <li>
+                        <a class="dropdown-item" href="../pages/profile.php">
+                            <i class="bi bi-person me-2"></i>Profile
+                        </a>
+                    </li> -->
+                    <!-- <li>
+                        <hr class="dropdown-divider">
+                    </li> -->
+                    <li>
+                        <a class="dropdown-item text-danger" href="../api/logout.php">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>

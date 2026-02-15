@@ -40,7 +40,7 @@ $stmt2->close();
 <div class="container-fluid">
     <!-- Welcome Section -->
     <div class="mb-4">
-        <h2>Welcome, <?php echo htmlspecialchars($_SESSION['teacher_name']); ?> 👨‍🏫</h2>
+        <h2>Welcome, <?php echo htmlspecialchars($_SESSION['teacher_name']); ?></h2>
         <p class="text-muted">
             Manage your classes, students, and enter results from this dashboard.
         </p>
