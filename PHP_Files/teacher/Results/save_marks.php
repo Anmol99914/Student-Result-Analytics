@@ -40,7 +40,7 @@ if (!$class_id || !$subject_id || empty($marks)) {
     exit();
 }
 
-// ===== FIX 1: Get valid students for this class =====
+// =====  Get valid students for this class =====
 $valid_students_sql = "SELECT student_id FROM student WHERE class_id = ? AND is_active = 1";
 $valid_stmt = $connection->prepare($valid_students_sql);
 $valid_stmt->bind_param("i", $class_id);
@@ -54,13 +54,13 @@ while($row = $valid_result->fetch_assoc()) {
 
 error_log("Valid students in class $class_id: " . implode(', ', $valid_student_ids));
 
-// ===== FIX 2: Filter marks to only include valid students =====
+// ===== Filter marks to only include valid students =====
 $filtered_marks = [];
 foreach ($marks as $student_id => $marks_obtained) {
     if (in_array($student_id, $valid_student_ids)) {
         $filtered_marks[$student_id] = $marks_obtained;
     } else {
-        error_log("⚠️ Skipping invalid student $student_id - not in class $class_id");
+        error_log("Skipping invalid student $student_id - not in class $class_id");
     }
 }
 
@@ -109,7 +109,7 @@ foreach ($marks as $student_id => $marks_obtained) {
     $percentage = ($marks_obtained / $total_marks) * 100;
     $grade = calculateGrade($percentage);
     
-    // ===== FIX 3: Check if student has verified marks =====
+    // ===== Check if student has verified marks =====
     $check_verified_sql = "SELECT result_id FROM result 
                           WHERE student_id = ? AND subject_id = ? 
                           AND verification_status = 'verified'
@@ -126,7 +126,7 @@ foreach ($marks as $student_id => $marks_obtained) {
         continue;
     }
     
-    // ===== FIX 4: Check for existing pending result =====
+    // ===== Check for existing pending result =====
     $check_sql = "SELECT result_id, verification_status FROM result 
                   WHERE student_id = ? AND subject_id = ? AND class_id = ? 
                   AND verification_status != 'verified'";
@@ -166,11 +166,11 @@ foreach ($marks as $student_id => $marks_obtained) {
         if ($update_stmt->execute()) {
             $success_count++;
             $updated_count++;
-            error_log("✅ Updated marks for $student_id: $marks_obtained");
+            error_log("Updated marks for $student_id: $marks_obtained");
         } else {
             $error_count++;
             $errors[] = "Student $student_id: " . $update_stmt->error;
-            error_log("❌ Update failed for $student_id: " . $update_stmt->error);
+            error_log("Update failed for $student_id: " . $update_stmt->error);
         }
     } else {
         // Insert new result
@@ -202,11 +202,11 @@ foreach ($marks as $student_id => $marks_obtained) {
         if ($insert_stmt->execute()) {
             $success_count++;
             $inserted_count++;
-            error_log("✅ Inserted marks for $student_id: $marks_obtained");
+            error_log("Inserted marks for $student_id: $marks_obtained");
         } else {
             $error_count++;
             $errors[] = "Student $student_id: " . $insert_stmt->error;
-            error_log("❌ Insert failed for $student_id: " . $insert_stmt->error);
+            error_log("Insert failed for $student_id: " . $insert_stmt->error);
         }
     }
 }
@@ -228,10 +228,10 @@ $response = [
 
 if ($success_count > 0) {
     $response['success'] = true;
-    $response['message'] = "✅ Saved $success_count student(s)";
+    $response['message'] = "Saved $success_count student(s)";
     
     if (!empty($verified_skipped)) {
-        $response['message'] .= " ⚠️ " . count($verified_skipped) . " verified student(s) were skipped";
+        $response['message'] .= "Error:" . count($verified_skipped) . " verified student(s) were skipped";
         $response['verified_skipped'] = $verified_skipped;
     }
     
@@ -240,10 +240,10 @@ if ($success_count > 0) {
     }
 } else {
     if (!empty($verified_skipped) && $success_count == 0) {
-        $response['message'] = "❌ No changes saved. All selected students have verified marks.";
+        $response['message'] = "No changes saved. All selected students have verified marks.";
         $response['verified_skipped'] = $verified_skipped;
     } else {
-        $response['message'] = "❌ Failed to save marks";
+        $response['message'] = "Failed to save marks";
         $response['errors'] = $errors;
     }
 }

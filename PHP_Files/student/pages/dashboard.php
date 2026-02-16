@@ -85,7 +85,7 @@ window.loadPage = window.loadPage || function(url) {
                 }
             });
             
-            console.log('✅ Page loaded:', url);
+            console.log('Page loaded:', url);
         })
         .catch(error => {
             console.error('Fetch error:', error);

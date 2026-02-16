@@ -26,7 +26,6 @@ $faculty_stmt->execute();
 $faculty_result = $faculty_stmt->get_result();
 
 if ($faculty_result->num_rows === 0) {
-    // Try alternative: maybe it's faculty_name instead of code
     $alt_sql = "SELECT faculty_id FROM faculty WHERE faculty_name = ?";
     $alt_stmt = $connection->prepare($alt_sql);
     $alt_stmt->bind_param("s", $faculty_code);

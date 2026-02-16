@@ -96,7 +96,7 @@ window.StudentManager = class StudentManager {
             if (search) params.append('search', search);
             
             const url = params.toString() ? path + '?' + params.toString() : path;
-            console.log(`📡 Fetching from: ${url}`);
+            console.log(`Fetching from: ${url}`);
             
             const response = await fetch(url);
             
@@ -108,7 +108,7 @@ window.StudentManager = class StudentManager {
             console.log(`Found ${students.length} students`);
             
             this.renderStudents(students);
-            this.updateStats(students); // Use this ONE function for stats
+            this.updateStats(students); // Usinggg this ONE function for stats
             
         } catch (error) {
             console.error('Error loading students:', error);
