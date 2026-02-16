@@ -11,44 +11,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-focus on Student ID field
     document.getElementById('username').focus();
     
-       // Floating labels - Improved version
-       const floatingInputs = document.querySelectorAll('.floating-label .form-control');
-       floatingInputs.forEach(input => {
-           // Set placeholder to empty string for floating labels
-           input.setAttribute('placeholder', ' ');
-           
-           // Check if input has value on page load
-           if (input.value.trim() !== '') {
-               input.parentElement.classList.add('has-value');
-               input.nextElementSibling.classList.add('active');
-           }
-           
-           input.addEventListener('focus', function() {
-               this.parentElement.classList.add('focused');
-               this.nextElementSibling.classList.add('active');
-           });
-           
-           input.addEventListener('blur', function() {
-               this.parentElement.classList.remove('focused');
-               if (this.value.trim() === '') {
-                   this.nextElementSibling.classList.remove('active');
-                   this.parentElement.classList.remove('has-value');
-               } else {
-                   this.parentElement.classList.add('has-value');
-               }
-           });
-           
-           // Auto-uppercase for Student ID
-           if (input.id === 'username') {
-               input.addEventListener('input', function() {
-                   this.value = this.value.toUpperCase();
-                   if (this.value.trim() !== '') {
-                       this.nextElementSibling.classList.add('active');
-                       this.parentElement.classList.add('has-value');
-                   }
-               });
-           }
-       });   
+    // Floating labels - Improved version
+    const floatingInputs = document.querySelectorAll('.floating-label .form-control');
+    floatingInputs.forEach(input => {
+        // Set placeholder to empty string for floating labels
+        input.setAttribute('placeholder', ' ');
+        
+        // Check if input has value on page load
+        if (input.value.trim() !== '') {
+            input.parentElement.classList.add('has-value');
+            input.nextElementSibling.classList.add('active');
+        }
+        
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+            this.nextElementSibling.classList.add('active');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+            if (this.value.trim() === '') {
+                this.nextElementSibling.classList.remove('active');
+                this.parentElement.classList.remove('has-value');
+            } else {
+                this.parentElement.classList.add('has-value');
+            }
+        });
+        
+        // Auto-uppercase for Student ID
+        if (input.id === 'username') {
+            input.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+                if (this.value.trim() !== '') {
+                    this.nextElementSibling.classList.add('active');
+                    this.parentElement.classList.add('has-value');
+                }
+            });
+        }
+    });
     
     // Student ID format validation
     const studentIdInput = document.getElementById('username');
@@ -56,10 +56,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Auto-uppercase
         this.value = this.value.toUpperCase();
         
-        // Validate format: BCA001, BBM001, etc.
-        const isValid = /^[A-Z]{3}\d{3}$/.test(this.value);
+        // Accept: 3+ letters + 2-3 numbers (e.g., BCA01, BCA001, BSC10, BSC.CSIT10)
+        const isValid = /^[A-Z]{3,}(\.?[A-Z]{0,4})?\d{2,3}$/.test(this.value);
+        
         if (this.value.length > 0 && !isValid) {
-            this.setCustomValidity('Format: ABC123 (3 letters + 3 numbers)');
+            this.setCustomValidity('Error! Format: 3+ letters + 2-3 numbers (e.g., BCA01, BCA001, BSC10, BSC.CSIT10)');
+            
+            // Update the invalid feedback message
+            const feedbackDiv = this.closest('.mb-4')?.querySelector('.invalid-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = 'Format: 3+ letters + 2-3 numbers (e.g., BCA01, BCA001, BSC.CSIT10)';
+            }
         } else {
             this.setCustomValidity('');
         }
@@ -69,9 +76,60 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Basic validation
-        if (!form.checkValidity()) {
-            e.stopPropagation();
+        // Get values
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        // Remove previous validation states
+        document.getElementById('username').classList.remove('is-invalid');
+        document.getElementById('password').classList.remove('is-invalid');
+        form.classList.remove('was-validated');
+        
+        let isValid = true;
+        
+        // Check if fields are empty FIRST
+        if (username === '') {
+            document.getElementById('username').classList.add('is-invalid');
+            document.getElementById('username').setCustomValidity('Please enter your Student ID');
+            
+            // Update feedback message
+            const feedbackDiv = document.getElementById('username').closest('.mb-4')?.querySelector('.invalid-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = 'Please enter your Student ID';
+            }
+            isValid = false;
+        }
+        
+        if (password === '') {
+            document.getElementById('password').classList.add('is-invalid');
+            document.getElementById('password').setCustomValidity('Please enter your password');
+            
+            // Update feedback message
+            const feedbackDiv = document.getElementById('password').closest('.mb-4')?.querySelector('.invalid-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = 'Please enter your password';
+            }
+            isValid = false;
+        }
+        
+        // If empty fields, show error and stop
+        if (!isValid) {
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Check format (only if not empty)
+        const formatValid = /^[A-Z]{3,}(\.?[A-Z]{0,4})?\d{2,3}$/.test(username.toUpperCase());
+        if (!formatValid) {
+            document.getElementById('username').classList.add('is-invalid');
+            document.getElementById('username').setCustomValidity('Format: 3+ letters + 2-3 numbers (e.g., BCA01, BCA001, BSC.CSIT10)');
+            
+            // Update feedback message
+            const feedbackDiv = document.getElementById('username').closest('.mb-4')?.querySelector('.invalid-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = 'Format: 3+ letters + 2-3 numbers (e.g., BCA01, BCA001, BSC.CSIT10)';
+            }
+            
             form.classList.add('was-validated');
             return;
         }

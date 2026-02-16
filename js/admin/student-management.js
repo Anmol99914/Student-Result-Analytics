@@ -271,14 +271,47 @@ window.StudentManager = class StudentManager {
             return;
         }
         
+        // Get form data
         const formData = new FormData(form);
         
+        // Basic validation 
+        const studentId = formData.get('student_id');
+        const studentName = formData.get('student_name');
+        const email = formData.get('email');
+        const password = formData.get('password');
+        const classId = formData.get('class_id');
+        
+        if (!studentId || studentId.trim() === '') {
+            alert('Student ID is required');
+            return;
+        }
+        
+        if (!studentName || studentName.trim() === '') {
+            alert('Student name is required');
+            return;
+        }
+        
+        if (!email || email.trim() === '') {
+            alert('Email is required');
+            return;
+        }
+        
+        if (!password || password.trim() === '') {
+            alert('Password is required');
+            return;
+        }
+        
+        if (!classId || classId === '') {
+            alert('Please select a class');
+            document.querySelector('[name="class_id"]')?.focus();
+            return;
+        }
+
         const submitBtn = document.querySelector('[onclick*="submitAddStudent"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
         submitBtn.disabled = true;
         
-        // FIXED PATH - lowercase 'students'
         fetch('/Student_Result_Analytics/PHP_Files/admin/students/add_student.php', {
             method: 'POST',
             body: formData
@@ -289,7 +322,7 @@ window.StudentManager = class StudentManager {
         })
         .then(data => {
             if (data.success) {
-                alert('Success: ' + data.message);
+                alert('Done: ' + data.message);
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
                 if (modal) modal.hide();
                 this.loadStudents();

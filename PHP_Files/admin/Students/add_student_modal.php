@@ -24,7 +24,7 @@ $classes = $connection->query("SELECT class_id, faculty, semester FROM class WHE
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Student ID <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="student_id" required 
-                                   placeholder="e.g., BCA001">
+                                   placeholder="e.g., BCA001, BSC.CSIT10">
                             <small class="text-muted">Unique identifier for the student</small>
                         </div>
                         <div class="col-md-6 mb-3">
