@@ -59,6 +59,16 @@ if ($students_result->num_rows === 0) {
 //               AND student_id IN (SELECT student_id FROM student WHERE class_id = ?)";
 
 // Get existing marks for THIS SUBJECT and THIS CLASS only - NO TEACHER FILTER!
+// $marks_sql = "SELECT 
+//                 student_id,
+//                 marks_obtained,
+//                 grade,
+//                 verification_status
+//               FROM result 
+//               WHERE subject_id = ? 
+//               AND class_id = ?
+//               ORDER BY student_id";
+// Get existing marks for this subject for each student
 $marks_sql = "SELECT 
                 student_id,
                 marks_obtained,
@@ -66,8 +76,11 @@ $marks_sql = "SELECT
                 verification_status
               FROM result 
               WHERE subject_id = ? 
-              AND class_id = ?
+              AND student_id IN (
+                  SELECT student_id FROM student WHERE class_id = ?
+              )
               ORDER BY student_id";
+
 
 $marks_stmt = $connection->prepare($marks_sql);
 $marks_stmt->bind_param("ii", $subject_id, $class_id);

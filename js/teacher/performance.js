@@ -1,41 +1,18 @@
 // /Student_Result_Analytics/js/teacher/performance.js
 (function() {
-    console.log('✅ performance.js loaded');
+    console.log('performance.js loaded');
     
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initPerformance);
-    } else {
-        initPerformance();
-    }
-    
-    // Also listen for page loads via AJAX
-    window.addEventListener('pageLoaded', initPerformance);
-    
-    function initPerformance() {
-        console.log('Initializing performance...');
+    // Define renderPerformance FIRST
+    function renderPerformance() {
+        console.log('renderPerformance called');
         
         if (!window.classData) {
-            console.log('No class data yet, will try again in 500ms');
-            setTimeout(checkForData, 500);
+            console.log('No class data yet');
             return;
         }
         
-        renderPerformance();
-    }
-    
-    function checkForData() {
-        if (window.classData) {
-            console.log('Class data found, rendering...');
-            renderPerformance();
-        } else {
-            console.log('Still no class data');
-        }
-    }
-    
-    function renderPerformance() {
         const data = window.classData;
-        console.log('📊 Rendering performance with data:', data);
+        console.log('Rendering performance with data:', data);
         
         // Check if we're on a performance page
         if (!document.querySelector('.performance-stats') && !document.querySelector('#chart')) {
@@ -64,6 +41,7 @@
         }
     }
     
+    // Helper functions
     function updateStatElement(id, value) {
         const element = document.getElementById(id);
         if (element) {
@@ -114,11 +92,47 @@
         
         console.log('Chart created');
     }
-})();
-
-// Export function for manual initialization
-window.initializePerformanceChart = function() {
-    if (window.classData) {
+    
+    // Initialize when DOM is ready
+    function initPerformance() {
+        console.log('Initializing performance...');
+        
+        if (!window.classData) {
+            console.log('No class data yet, will try again in 500ms');
+            setTimeout(checkForData, 500);
+            return;
+        }
+        
         renderPerformance();
     }
-};
+    
+    function checkForData() {
+        if (window.classData) {
+            console.log('Class data found, rendering...');
+            renderPerformance();
+        } else {
+            console.log('Still no class data');
+        }
+    }
+    
+    // Set up event listeners for initial load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPerformance);
+    } else {
+        initPerformance();
+    }
+    
+    // Also listen for page loads via AJAX
+    window.addEventListener('pageLoaded', initPerformance);
+    
+    // Make functions globally available
+    window.renderPerformance = renderPerformance;
+    window.initializePerformanceChart = function() {
+        console.log('initializePerformanceChart called');
+        if (window.classData) {
+            renderPerformance();
+        }
+    };
+    
+    console.log('performance.js initialized, renderPerformance available:', typeof renderPerformance);
+})();

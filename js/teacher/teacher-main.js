@@ -4,73 +4,6 @@
 let TEACHER_ID = 0;
 let TEACHER_NAME = '';
 
-// ===== CORE FUNCTIONS =====
-
-
-// Load any page via AJAX
-// function loadPage(url) {
-//     console.log('Loading page:', url);
-//     const mainContent = document.getElementById('main-content');
-    
-//     if (!mainContent) {
-//         console.error('Main content container not found!');
-//         return false;
-//     }
-    
-//     // Show loading
-//     mainContent.innerHTML = `
-//         <div class="text-center py-5 loading-spinner">
-//             <div class="spinner-border text-primary" role="status">
-//                 <span class="visually-hidden">Loading...</span>
-//             </div>
-//             <p class="mt-2">Loading...</p>
-//         </div>
-//     `;
-
-//     // Make sure URL is absolute
-//     if (!url.startsWith('http') && !url.startsWith('/')) {
-//         url = '/' + url;
-//     }
-    
-//     fetch(url)
-//         .then(response => {
-//             if (!response.ok) {
-//                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-//             }
-//             return response.text();
-//         })
-//         .then(html => {
-//             // Set HTML first
-//             mainContent.innerHTML = html;
-//             console.log('Page loaded successfully:', url);
-            
-//             // Execute scripts in the loaded content
-//             executeScriptsInContent(mainContent);
-            
-//             // Initialize Bootstrap components
-//             if (typeof initBootstrapComponents === 'function') {
-//                 initBootstrapComponents();
-//             }
-            
-//             // Dispatch page loaded event
-//             window.dispatchEvent(new CustomEvent('pageLoaded', { 
-//                 detail: { url, content: html } 
-//             }));
-//         })
-//         .catch(error => {
-//             console.error('Error loading page:', error);
-//             mainContent.innerHTML = `
-//                 <div class="alert alert-danger">
-//                     <i class="bi bi-exclamation-triangle"></i> 
-//                     Error loading content: ${error.message}
-//                     <div class="mt-2">
-//                         <button onclick="location.reload()" class="btn btn-sm btn-secondary">Reload Page</button>
-//                     </div>
-//                 </div>
-//             `;
-//         });
-// }
-
 // ===== LOAD PAGE - SIMPLE FETCH VERSION =====
 function loadPage(url) {
     console.log('Loading page:', url);
@@ -139,46 +72,78 @@ function loadPage(url) {
         });
 }
 
-// Execute scripts in dynamically loaded content
+
+// Function to execute scripts in dynamically loaded content
 function executeScriptsInContent(container) {
     console.log('Executing scripts in loaded content...');
     
-    const scripts = container.querySelectorAll('script');
-    scripts.forEach(script => {
-        // If it's an external script
+    // Separate scripts into external and inline
+    const externalScripts = [];
+    const inlineScripts = [];
+    
+    container.querySelectorAll('script').forEach(script => {
         if (script.src) {
-            // SKIP results.js - it's already loaded globally
-            if (script.src.includes('results.js')) {
-                console.log('Skipping duplicate results.js');
-                return;
-            }
-            
-            const newScript = document.createElement('script');
-            newScript.src = script.src;
-            newScript.async = false;
-            
-            // Copy all attributes
-            Array.from(script.attributes).forEach(attr => {
-                newScript.setAttribute(attr.name, attr.value);
-            });
-            
-            // Replace old script with new one
-            script.parentNode.replaceChild(newScript, script);
-            
+            externalScripts.push(script.src);
         } else {
-            // If it's inline script
-            try {
-                const newScript = document.createElement('script');
-                newScript.textContent = script.textContent;
-                document.body.appendChild(newScript);
-                document.body.removeChild(newScript);
-                console.log('Inline script executed');
-            } catch (error) {
-                console.error('Error executing inline script:', error);
-            }
+            inlineScripts.push(script.textContent);
         }
     });
+    
+    // Load external scripts first (like Highcharts)
+    let loadedCount = 0;
+    
+    function loadNextExternal() {
+        if (loadedCount >= externalScripts.length) {
+            // All external scripts loaded, now run inline scripts
+            inlineScripts.forEach(scriptContent => {
+                try {
+                    eval(scriptContent);
+                    console.log('✅ Inline script executed');
+                } catch (e) {
+                    console.error('Inline script error:', e);
+                }
+            });
+            return;
+        }
+        
+        const src = externalScripts[loadedCount];
+        console.log('Loading external script:', src);
+        
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        
+        script.onload = () => {
+            console.log('✅ Loaded:', src);
+            loadedCount++;
+            loadNextExternal(); // Load next script
+        };
+        
+        script.onerror = (e) => {
+            console.error('Failed to load:', src, e);
+            loadedCount++;
+            loadNextExternal(); // Continue anyway
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    // Start loading external scripts
+    if (externalScripts.length > 0) {
+        loadNextExternal();
+    } else {
+        // No external scripts, just run inline
+        inlineScripts.forEach(scriptContent => {
+            try {
+                eval(scriptContent);
+                console.log('✅ Inline script executed');
+            } catch (e) {
+                console.error('Inline script error:', e);
+            }
+        });
+    }
 }
+
 // Set active link in sidebar
 function setActiveLink(pageName) {
     // Remove active class from all links

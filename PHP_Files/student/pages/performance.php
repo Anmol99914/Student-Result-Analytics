@@ -8,6 +8,44 @@ require_once '../../../config.php';
 $student_id = $_SESSION['student_username'];
 $student_name = $_SESSION['student_name'];
 
+// Get current payment status
+$payment_sql = "SELECT payment_status FROM payment 
+                WHERE student_id = ? AND is_latest = 1 
+                LIMIT 1";
+$payment_stmt = $connection->prepare($payment_sql);
+$payment_stmt->bind_param("s", $student_id);
+$payment_stmt->execute();
+$payment_result = $payment_stmt->get_result();
+$payment = $payment_result->fetch_assoc();
+$payment_status = $payment['payment_status'] ?? 'Unpaid';
+
+// If unpaid, show restricted message and exit
+if ($payment_status !== 'Paid') {
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Access Restricted</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; height: 100vh; }
+            .restricted-card { max-width: 500px; text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        </style>
+    </head>
+    <body>
+        <div class="restricted-card">
+            <i class="bi bi-lock display-1 text-warning"></i>
+            <h3 class="mt-4">Performance Charts Locked</h3>
+            <p class="text-muted">Complete your fee payment to access performance charts.</p>
+            <a href="dashboard.php" class="btn btn-primary mt-3">Back to Dashboard</a>
+            <a href="#" class="btn btn-outline-primary mt-3 ms-2">Go to Payments</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
 // Get student data
 $stmt = $connection->prepare("
     SELECT s.student_id, s.student_name, 
@@ -24,7 +62,6 @@ $result = $stmt->get_result();
 $student = $result->fetch_assoc();
 
 // Get semester performance data
-// Get semester performance data - FIXED
 $semester_sql = "SELECT 
                     sem.semester_name,
                     AVG(r.percentage) as avg_percentage

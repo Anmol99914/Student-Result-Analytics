@@ -24,11 +24,12 @@ $sql = "SELECT r.result_id,
                r.verification_date,
                r.entered_by_teacher_id,
                r.verified_by_admin_id,
+               r.semester_id, 
                s.subject_name,
                stu.student_name,
                stu.student_id as roll_number,
                c.faculty,
-               c.semester,
+               c.semester as current_semester,
                t.name as teacher_name
         FROM result r
         JOIN subject s ON r.subject_id = s.subject_id
@@ -47,7 +48,7 @@ if ($faculty) {
 }
 
 if ($semester) {
-    $sql .= " AND c.semester = ?";
+    $sql .= " AND r.semester_id = ?";
     $params[] = $semester;
     $types .= 'i';
 }
@@ -239,18 +240,19 @@ $total_verified = $total_result->fetch_assoc()['total'];
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Student</th>
-                            <th>ID</th>
-                            <th>Subject</th>
-                            <th>Class</th>
-                            <th>Marks</th>
-                            <th>Grade</th>
-                            <th>Teacher</th>
-                            <th>Verified On</th>
-                            <th>Status</th>
-                        </tr>
+                    <tr>
+                        <th>#</th>
+                        <th>Student</th>
+                        <th>ID</th>
+                        <th>Subject</th>
+                        <th>Faculty</th>
+                        <th>Semester</th>  
+                        <th>Marks</th>
+                        <th>Grade</th>
+                        <th>Teacher</th>
+                        <th>Verified On</th>
+                        <th>Status</th>
+                    </tr>
                     </thead>
                     <tbody>
                         <?php 
@@ -262,73 +264,93 @@ $total_verified = $total_result->fetch_assoc()['total'];
                             $total_marks_value = $row['total_marks'] ?? 100;
                             $percentage = $row['percentage'] ?? (($marks_obtained / $total_marks_value) * 100);
                             $grade = $row['grade'] ?? '';
-                            $class_name = $row['faculty'] . ' - Semester ' . $row['semester'];
+                            $class_name = $row['faculty'] . ' - Semester ' . $row['semester_id'];
                             
                             $total_marks_obtained += $marks_obtained;
                             $total_marks += $total_marks_value;
                         ?>
                         <tr>
-                            <td><?= $count++ ?></td>
-                            <td>
-                                <div class="fw-medium"><?= htmlspecialchars($row['student_name']) ?></div>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark font-monospace">
-                                    <?= htmlspecialchars($row['roll_number']) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <div class="fw-medium"><?= htmlspecialchars($row['subject_name']) ?></div>
-                            </td>
-                            <td>
-                                <div class="text-primary fw-medium"><?= htmlspecialchars($class_name) ?></div>
-                            </td>
-                            <td>
-                                <div class="marks-container">
-                                    <span class="fw-bold"><?= $marks_obtained ?>/<?= $total_marks_value ?></span>
-                                    <?php if($percentage): ?>
-                                        <span class="percentage-badge badge <?= $percentage >= 80 ? 'bg-success' : ($percentage >= 60 ? 'bg-warning' : 'bg-danger') ?>">
-                                            <?= round($percentage, 1) ?>%
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <?php if($grade): ?>
-                                <span class="badge <?= 
-                                    $grade === 'A' ? 'grade-A' : 
-                                    ($grade === 'B' ? 'grade-B' : 
-                                    ($grade === 'C' ? 'grade-C' : 'grade-D')) 
-                                ?> px-2 py-1">
-                                    <?= $grade ?>
-                                </span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if(!empty($row['teacher_name'])): ?>
-                                    <span class="text-primary"><?= htmlspecialchars($row['teacher_name']) ?></span>
-                                <?php else: ?>
-                                    <span class="text-muted">N/A</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if($row['verification_date']): ?>
-                                    <div class="text-nowrap">
-                                        <?= date('d M Y', strtotime($row['verification_date'])) ?>
-                                    </div>
-                                    <small class="text-muted">
-                                        <?= date('h:i A', strtotime($row['verification_date'])) ?>
-                                    </small>
-                                <?php else: ?>
-                                    <span class="text-muted">-</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> Verified
-                                </span>
-                            </td>
-                        </tr>
+    <td class="text-center"><?= $count++ ?></td>
+    
+    <td>
+        <div class="fw-medium"><?= htmlspecialchars($row['student_name']) ?></div>
+    </td>
+    
+    <td>
+        <span class="badge bg-light text-dark font-monospace">
+            <?= htmlspecialchars($row['roll_number']) ?>
+        </span>
+    </td>
+    
+    <td>
+        <div class="fw-medium"><?= htmlspecialchars($row['subject_name']) ?></div>
+    </td>
+    
+    <!-- Faculty Column -->
+    <td>
+        <span class="badge bg-primary"><?= htmlspecialchars($row['faculty']) ?></span>
+    </td>
+    
+    <!-- Semester Column (from result table) -->
+    <td class="text-center">
+        <span class="badge bg-info">Semester <?= $row['semester_id'] ?></span>
+    </td>
+    
+    <!-- Marks Column -->
+    <td>
+        <div class="marks-container">
+            <span class="fw-bold"><?= $marks_obtained ?>/<?= $total_marks_value ?></span>
+            <?php if($percentage): ?>
+                <span class="percentage-badge badge <?= $percentage >= 80 ? 'bg-success' : ($percentage >= 60 ? 'bg-warning' : 'bg-danger') ?>">
+                    <?= round($percentage, 1) ?>%
+                </span>
+            <?php endif; ?>
+        </div>
+    </td>
+    
+    <!-- Grade Column -->
+    <td class="text-center">
+        <?php if($grade): ?>
+        <span class="badge <?= 
+            $grade === 'A' ? 'grade-A' : 
+            ($grade === 'B' ? 'grade-B' : 
+            ($grade === 'C' ? 'grade-C' : 'grade-D')) 
+        ?> px-2 py-1">
+            <?= $grade ?>
+        </span>
+        <?php endif; ?>
+    </td>
+    
+    <!-- Teacher Column -->
+    <td>
+        <?php if(!empty($row['teacher_name'])): ?>
+            <span class="text-primary"><?= htmlspecialchars($row['teacher_name']) ?></span>
+        <?php else: ?>
+            <span class="text-muted">N/A</span>
+        <?php endif; ?>
+    </td>
+    
+    <!-- Verified On Column -->
+    <td>
+        <?php if($row['verification_date']): ?>
+            <div class="text-nowrap">
+                <?= date('d M Y', strtotime($row['verification_date'])) ?>
+            </div>
+            <small class="text-muted">
+                <?= date('h:i A', strtotime($row['verification_date'])) ?>
+            </small>
+        <?php else: ?>
+            <span class="text-muted">-</span>
+        <?php endif; ?>
+    </td>
+    
+    <!-- Status Column -->
+    <td class="text-center">
+        <span class="badge bg-success">
+            <i class="bi bi-check-circle"></i> Verified
+        </span>
+    </td>
+</tr>
                         <?php endwhile; ?>
                     </tbody>
                     <?php if($results->num_rows > 1): ?>
@@ -366,7 +388,7 @@ if ($faculty) {
 }
 
 if ($semester) {
-    $count_sql .= " AND c.semester = ?";
+    $count_sql .= " AND r.semester_id = ?";
     $count_params[] = $semester;
     $count_types .= 'i';
 }

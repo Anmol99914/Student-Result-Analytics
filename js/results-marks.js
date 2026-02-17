@@ -544,6 +544,7 @@ calculateAllGrades: function() {
     },
 
     // To refresh the table data
+    // To refresh the table data
 refreshTableData: function() {
     log('Refreshing table data...');
     
@@ -574,8 +575,8 @@ refreshTableData: function() {
                     oldTable.innerHTML = newTable.innerHTML;
                 }
                 
-                // Re-attach event listeners
-                this.attachMarksListeners();
+                // Just recalculate grades - no need to reattach listeners
+                // because the marks inputs are read-only now
                 this.calculateAllGrades();
                 
                 log('Table refreshed successfully');

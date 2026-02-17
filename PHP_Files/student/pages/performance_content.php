@@ -6,6 +6,29 @@ require_once '../../../config.php';
 $student_id = $_SESSION['student_username'];
 $student_name = $_SESSION['student_name'];
 
+// Get current payment status
+$payment_sql = "SELECT payment_status FROM payment 
+                WHERE student_id = ? AND is_latest = 1 
+                LIMIT 1";
+$payment_stmt = $connection->prepare($payment_sql);
+$payment_stmt->bind_param("s", $student_id);
+$payment_stmt->execute();
+$payment_result = $payment_stmt->get_result();
+$payment = $payment_result->fetch_assoc();
+$payment_status = $payment['payment_status'] ?? 'Unpaid';
+
+// If unpaid, show restricted message
+if ($payment_status !== 'Paid') {
+    echo '<div class="alert alert-warning text-center py-5">
+            <i class="bi bi-lock display-1 text-warning"></i>
+            <h4 class="mt-3">Performance Charts Locked</h4>
+            <p class="text-muted">Complete your fee payment to access performance charts.</p>
+            <a href="dashboard.php" class="btn btn-primary">Back to Dashboard</a>
+            <a href="#" class="btn btn-outline-primary ms-2">Go to Payments</a>
+          </div>';
+    exit();
+}
+
 // Get student data
 $stmt = $connection->prepare("
     SELECT s.student_id, s.student_name, 
@@ -25,7 +48,7 @@ $semester_sql = "SELECT
                     AVG(r.percentage) as avg_percentage
                 FROM result r
                 JOIN semester sem ON r.semester_id = sem.semester_id
-                WHERE r.student_id = ? AND r.status = 'published'
+                WHERE r.student_id = ? AND r.verification_status = 'verified'
                 GROUP BY r.semester_id
                 ORDER BY r.semester_id";
 $semester_stmt = $connection->prepare($semester_sql);
@@ -48,7 +71,7 @@ $subject_sql = "SELECT
                     r.percentage
                 FROM result r
                 JOIN subject s ON r.subject_id = s.subject_id
-                WHERE r.student_id = ? AND r.semester_id = ? AND r.status = 'published'
+                WHERE r.student_id = ? AND r.semester_id = ? AND r.verification_status = 'verified'
                 ORDER BY s.subject_name";
 $subject_stmt = $connection->prepare($subject_sql);
 $subject_stmt->bind_param("si", $student_id, $current_semester);
@@ -64,15 +87,12 @@ while($row = $subject_result->fetch_assoc()) {
 }
 ?>
 
-
-
-<!-- PASS DATA TO JAVASCRIPT - Exactly like teacher version -->
 <script>
     window.studentData = {
         semester: <?= json_encode($semester_data) ?>,
         subject: <?= json_encode($subject_data) ?>
     };
-    console.log('✅ Student data loaded:', window.studentData);
+    console.log('Student data loaded:', window.studentData);
 </script>
 
 <!-- Stats Cards -->

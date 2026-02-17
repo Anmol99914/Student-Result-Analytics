@@ -1,5 +1,4 @@
 <?php
-// File: PHP_Files/student/pages/results.php
 require_once '../includes/auth_check.php';
 require_student_login();
 require_once '../../../config.php';
@@ -41,16 +40,6 @@ $selected_semester = $_GET['semester'] ?? $_SESSION['student_semester'] ?? 1;
 $results = getStudentResults($student_id, $selected_semester);
 $stats = calculateResultStats($results);
 
-// Helper Functions
-// function checkPaymentStatus($student_id) {
-//     global $connection;
-//     $stmt = $connection->prepare("SELECT payment_status, amount_paid, total_amount FROM payment WHERE student_id = ? ORDER BY payment_date DESC LIMIT 1");
-//     $stmt->bind_param("s", $student_id);
-//     $stmt->execute();
-//     $result = $stmt->get_result();
-//     return $result->fetch_assoc() ?: ['payment_status' => 'Unpaid', 'amount_paid' => 0, 'total_amount' => 0];
-// }
-
 function checkPaymentStatus($student_id) {
     global $connection;
     $stmt = $connection->prepare("SELECT payment_status, amount_paid, total_amount FROM payment WHERE student_id = ? AND is_latest = 1 ORDER BY payment_date DESC LIMIT 1");
@@ -81,7 +70,8 @@ function getStudentResults($student_id, $semester_id) {
     return $stmt->get_result();
 }
 function calculateResultStats($results) {
-    $stats = ['total_credits' => 0, 'earned_credits' => 0, 'total_grade_points' => 0, 'total_subjects' => 0, 'passed_subjects' => 0, 'failed_subjects' => 0];
+    $stats = ['total_credits' => 0, 'earned_credits' => 0, 'total_grade_points' => 0, 
+    'total_subjects' => 0, 'passed_subjects' => 0, 'failed_subjects' => 0];
     $grade_points = ['A+' => 4.0, 'A' => 3.7, 'B+' => 3.3, 'B' => 3.0, 'C+' => 2.7, 'C' => 2.3, 'F' => 0.0];
     
     if ($results->num_rows > 0) {
@@ -514,68 +504,6 @@ function calculateResultStats($results) {
                         </table>
                     </div>
                     
-                    <!-- Summary Cards -->
-                    <div class="row g-3 p-3">
-                        <!-- GPA Card -->
-                        <div class="col-md-3 col-6">
-                            <div class="card border-success h-100">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted small text-uppercase mb-2">GPA</h6>
-                                    <div class="display-6 fw-bold text-success"><?php echo number_format($stats['gpa'], 2); ?></div>
-                                    <small class="text-muted">/ 4.0</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Pass Rate Card -->
-                        <div class="col-md-3 col-6">
-                            <div class="card border-primary h-100">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted small text-uppercase mb-2">Pass Rate</h6>
-                                    <div class="display-6 fw-bold text-primary">
-                                        <?php echo $stats['total_subjects'] > 0 ? round(($stats['passed_subjects']/$stats['total_subjects'])*100) : 0; ?>%
-                                    </div>
-                                    <small class="text-muted"><?php echo $stats['passed_subjects']; ?>/<?php echo $stats['total_subjects']; ?> subjects</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Credits Card -->
-                        <div class="col-md-3 col-6">
-                            <div class="card border-info h-100">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted small text-uppercase mb-2">Credits Earned</h6>
-                                    <div class="display-6 fw-bold text-info"><?php echo $stats['earned_credits']; ?></div>
-                                    <small class="text-muted">of <?php echo $stats['total_credits']; ?></small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Status Card -->
-                        <div class="col-md-3 col-6">
-                            <div class="card border-<?php echo $stats['failed_subjects'] > 0 ? 'warning' : 'success'; ?> h-100">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted small text-uppercase mb-2">Status</h6>
-                                    <?php 
-                                    $status_text = $stats['failed_subjects'] > 0 ? 'Needs Work' : 
-                                                  ($stats['gpa'] >= 3.5 ? 'Excellent' : 
-                                                  ($stats['gpa'] >= 3.0 ? 'Good' : 
-                                                  ($stats['gpa'] >= 2.0 ? 'Satisfactory' : 'Needs Work')));
-                                    $status_color = $stats['failed_subjects'] > 0 ? 'warning' : 
-                                                   ($stats['gpa'] >= 3.5 ? 'success' : 
-                                                   ($stats['gpa'] >= 3.0 ? 'info' : 
-                                                   ($stats['gpa'] >= 2.0 ? 'primary' : 'secondary')));
-                                    ?>
-                                    <div class="display-6 fw-bold text-<?php echo $status_color; ?>"><?php echo $status_text; ?></div>
-                                    <?php if($stats['failed_subjects'] > 0): ?>
-                                        <small class="text-muted"><?php echo $stats['failed_subjects']; ?> subject<?php echo $stats['failed_subjects'] != 1 ? 's' : ''; ?> to improve</small>
-                                    <?php else: ?>
-                                        <small class="text-muted">All subjects passed</small>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- RESULT SUMMARY LINE -->
                     <?php

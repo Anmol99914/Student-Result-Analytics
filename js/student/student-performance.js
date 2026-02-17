@@ -1,8 +1,8 @@
-// student-performance.js - DEBUG VERSION
-console.log('🔍 1. student-performance.js loaded - starting debug');
+// student-performance.js 
+console.log('1. student-performance.js loaded - starting debug');
 
 (function() {
-    console.log('🔍 2. Self-executing function started');
+    console.log('2. Self-executing function started');
     
     // Check if Highcharts is loaded
     if (typeof Highcharts === 'undefined') {

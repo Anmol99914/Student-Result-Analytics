@@ -31,7 +31,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <script src="js/admin/verified-results.js" defer></script>
 
     <script>
-// EMERGENCY: Define loadResultsVerification immediately ughhhh
         window.loadResultsVerification = function() {
             console.log('loadResultsVerification called (temporary)');
             

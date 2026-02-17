@@ -95,7 +95,7 @@ include(__DIR__ . '/../../../config.php');
         </div>
     </div>
     
-    <!-- Quick Actions -->
+  <!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
@@ -103,8 +103,13 @@ include(__DIR__ . '/../../../config.php');
                 <h6 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h6>
             </div>
             <div class="card-body">
+                <!-- Section Title: Management -->
+                <div class="mb-3">
+                    <small class="text-muted fw-bold text-uppercase">MANAGEMENT</small>
+                </div>
+                
                 <!-- First Row - Management Actions -->
-                <div class="row g-3 mb-3">
+                <div class="row g-3 mb-4">
                     <div class="col-md-3 col-6">
                         <a href="#" onclick="loadPage('pages/manage_students.php?action=add')" 
                            class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
@@ -133,12 +138,38 @@ include(__DIR__ . '/../../../config.php');
                             <span>Manage Subjects</span>
                         </a>
                     </div>
-                    <a href="add_faculty.php" class="btn btn-outline-primary">
-                        <i class="bi bi-plus-circle"></i> Add New Faculty
-                    </a>
                 </div>
-
-                <!-- Second Row - Analytics & Reports -->
+                
+                <!-- Second Row - Faculty & Performance -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-6">
+                        <a href="add_faculty.php" 
+                           class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-plus-circle fs-2 mb-2"></i>
+                            <span>Add Faculty</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" onclick="loadPage('pages/performance_viewer.php')" 
+                           class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-bar-chart-fill fs-2 mb-2"></i>
+                            <span>View Student's Performance</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <!-- Empty for spacing -->
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <!-- Empty for spacing -->
+                    </div>
+                </div>
+                
+                <!-- Section Title: Reports & Analytics -->
+                <div class="mb-3 mt-2">
+                    <small class="text-muted fw-bold text-uppercase">REPORTS & ANALYTICS</small>
+                </div>
+                
+                <!-- Third Row - Reports -->
                 <div class="row g-3">
                     <div class="col-md-3 col-6">
                         <a href="dashboard_stats.php" 

@@ -17,7 +17,7 @@ $sql = "SELECT
             s.student_id,
             s.student_name,
             c.faculty,
-            c.semester,
+            r.semester_id as semester,
             sub.subject_name,
             r.marks_obtained,
             r.total_marks,
@@ -34,7 +34,7 @@ if ($faculty) {
     $sql .= " AND c.faculty = '" . $connection->real_escape_string($faculty) . "'";
 }
 if ($semester) {
-    $sql .= " AND c.semester = '" . $connection->real_escape_string($semester) . "'";
+    $sql .= " AND r.semester_id = '" . $connection->real_escape_string($semester) . "'"; // For filtering yo chai
 }
 
 $sql .= " ORDER BY c.faculty, c.semester, s.student_name, sub.subject_name";
@@ -59,43 +59,57 @@ $result = $connection->query($sql);
         </div>
         
         <!-- Filter Card -  -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filter Results</h5>
+        <!-- Filter Card -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filter Results</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Faculty</label>
+                <select name="faculty" class="form-select">
+                    <option value="">All Faculties</option>
+                    <?php
+                    // Fetch all active faculties from database
+                    $faculty_query = "SELECT faculty_code, faculty_name FROM faculty WHERE status = 'active' ORDER BY faculty_code";
+                    $faculty_result = $connection->query($faculty_query);
+                    
+                    if ($faculty_result && $faculty_result->num_rows > 0) {
+                        while ($faculty_row = $faculty_result->fetch_assoc()) {
+                            $faculty_code = htmlspecialchars($faculty_row['faculty_code']);
+                            $faculty_name = htmlspecialchars($faculty_row['faculty_name']);
+                            $selected = ($faculty == $faculty_code) ? 'selected' : '';
+                            echo "<option value=\"$faculty_code\" $selected>$faculty_name ($faculty_code)</option>";
+                        }
+                    }
+                    ?>
+                </select>
             </div>
-            <div class="card-body">
-                <form method="GET" class="row g-3">
-                    <div class="col-md-5">
-                        <label class="form-label">Faculty</label>
-                        <select name="faculty" class="form-select">
-                            <option value="">All Faculties</option>
-                            <option value="BCA" <?php echo $faculty == 'BCA' ? 'selected' : ''; ?>>BCA</option>
-                            <option value="BBM" <?php echo $faculty == 'BBM' ? 'selected' : ''; ?>>BBM</option>
-                            <option value="BIM" <?php echo $faculty == 'BIM' ? 'selected' : ''; ?>>BIM</option>
-                        </select>
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label">Semester</label>
-                        <select name="semester" class="form-select">
-                            <option value="">All Semesters</option>
-                            <?php for($i=1; $i<=8; $i++): ?>
-                                <option value="<?php echo $i; ?>" <?php echo $semester == $i ? 'selected' : ''; ?>>
-                                    Semester <?php echo $i; ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search me-2"></i>Filter
-                        </button>
-                    </div>
-                </form>
-                <div class="mt-2 text-muted small">
-                    <i class="bi bi-info-circle"></i> Select Faculty and Semester to filter results
-                </div>
+            
+            <div class="col-md-5">
+                <label class="form-label">Semester</label>
+                <select name="semester" class="form-select">
+                    <option value="">All Semesters</option>
+                    <?php for($i=1; $i<=8; $i++): ?>
+                        <option value="<?php echo $i; ?>" <?php echo $semester == $i ? 'selected' : ''; ?>>
+                            Semester <?php echo $i; ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
             </div>
+            
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>Filter
+                </button>
+            </div>
+        </form>
+        <div class="mt-2 text-muted small">
+            <i class="bi bi-info-circle"></i> Select Faculty and Semester to filter results
         </div>
+    </div>
+</div>
         
         <!-- Export Buttons -->
         <div class="row mb-4">

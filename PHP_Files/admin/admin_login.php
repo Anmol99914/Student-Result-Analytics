@@ -428,7 +428,7 @@
             
             <!-- Copyright -->
             <div class="copyright">
-                <p class="mb-2">© 2025 Student Result Analytics System</p>
+                <p class="mb-2">© 2026 Student Result Analytics System</p>
             </div>
         </div>
     </div>

@@ -17,20 +17,20 @@ $teacher_id = $_SESSION['teacher_id'];
 
 try {
     $sql = "SELECT DISTINCT 
-                c.class_id, 
-                c.faculty, 
-                c.semester, 
-                c.status, 
-                c.created_at,
-                c.batch_year,
-                (SELECT COUNT(*) FROM student WHERE class_id = c.class_id) as student_count,
-                (SELECT COUNT(*) FROM teacher_subject_assignment tsa 
-                 WHERE tsa.teacher_id = ? 
-                 AND tsa.class_id = c.class_id) as subject_count
-            FROM class c
-            INNER JOIN teacher_subject_assignment tsa ON c.class_id = tsa.class_id
-            WHERE tsa.teacher_id = ?
-            ORDER BY c.faculty, c.semester";
+            c.class_id, 
+            c.faculty, 
+            c.semester, 
+            c.status, 
+            c.created_at,
+            c.batch_year,
+            (SELECT COUNT(*) FROM student WHERE class_id = c.class_id AND is_active = 1) as student_count,
+            (SELECT COUNT(*) FROM teacher_subject_assignment tsa 
+             WHERE tsa.teacher_id = ? 
+             AND tsa.class_id = c.class_id) as subject_count
+        FROM class c
+        INNER JOIN teacher_subject_assignment tsa ON c.class_id = tsa.class_id
+        WHERE tsa.teacher_id = ?
+        ORDER BY c.faculty, c.semester";
     
     $stmt = $connection->prepare($sql);
     $stmt->bind_param("ii", $teacher_id, $teacher_id);

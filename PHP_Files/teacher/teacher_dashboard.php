@@ -29,6 +29,8 @@ $teacher_name = $_SESSION['teacher_name'];
     
     <!-- Teacher CSS -->
     <link rel="stylesheet" href="../../css/teacher_dashboard.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
     
 </head>
 <body class="teacher-wrapper">

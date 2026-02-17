@@ -224,9 +224,14 @@ window.StudentManager = class StudentManager {
                     <button class="btn btn-sm btn-outline-danger" onclick="window.studentManager.toggleStudentStatus('${s.student_id}', ${s.is_active})" title="${s.is_active == 1 ? 'Deactivate' : 'Activate'}">
                         <i class="bi bi-power"></i>
                     </button>
-                    <button class="btn btn-outline-success" onclick="window.studentManager.promoteStudent('${s.student_id}', '${s.faculty}', ${s.semester})" title="Promote to Next Semester">
-                        <i class="bi bi-arrow-up-circle"></i>
-                    </button>
+                    ${s.is_active == 1 
+                        ? `<button class="btn btn-outline-success" onclick="window.studentManager.promoteStudent('${s.student_id}', '${s.faculty}', ${s.semester})" title="Promote to Next Semester">
+                            <i class="bi bi-arrow-up-circle"></i>
+                           </button>`
+                        : `<button class="btn btn-outline-secondary" disabled title="Cannot promote inactive student">
+                            <i class="bi bi-arrow-up-circle"></i>
+                           </button>`
+                    }
                 </td>
             </tr>`;
         });
@@ -236,6 +241,14 @@ window.StudentManager = class StudentManager {
     }
     
     // ===== MODAL FUNCTIONS =====
+
+    // ===== VIEW STUDENT PERFORMANCE  =====
+viewPerformance(studentId) {
+    console.log('Viewing performance for student:', studentId);
+    
+    // Open the existing student performance page with student_id parameter
+    window.open(`/Student_Result_Analytics/PHP_Files/student/pages/performance.php?student_id=${studentId}`, '_blank');
+}
    
     openAddStudentModal() {
         console.log('Opening add student modal...');

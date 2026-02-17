@@ -110,21 +110,41 @@ foreach ($marks as $student_id => $marks_obtained) {
     $grade = calculateGrade($percentage);
     
     // ===== Check if student has verified marks =====
-    $check_verified_sql = "SELECT result_id FROM result 
-                          WHERE student_id = ? AND subject_id = ? 
-                          AND verification_status = 'verified'
-                          LIMIT 1";
-    $check_verified_stmt = $connection->prepare($check_verified_sql);
-    $check_verified_stmt->bind_param("si", $student_id, $subject_id);
-    $check_verified_stmt->execute();
-    $verified_exists = $check_verified_stmt->get_result()->fetch_assoc();
-    
-    if ($verified_exists) {
-        $verified_skipped[] = $student_id;
-        $skipped_count++;
-        $errors[] = "Student $student_id: Cannot modify - verified marks exist for this subject";
-        continue;
-    }
+    // ===== Check if student has verified marks =====
+$check_verified_sql = "SELECT result_id, marks_obtained, verification_status FROM result 
+WHERE student_id = ? AND subject_id = ? 
+AND verification_status = 'verified'
+LIMIT 1";
+$check_verified_stmt = $connection->prepare($check_verified_sql);
+$check_verified_stmt->bind_param("si", $student_id, $subject_id);
+$check_verified_stmt->execute();
+$verified_result = $check_verified_stmt->get_result();
+$verified = $verified_result->fetch_assoc();
+
+if ($verified) {
+// If the verified record has marks > 0, it's truly verified and cannot be changed
+if ($verified['marks_obtained'] > 0) {
+$verified_skipped[] = $student_id;
+$skipped_count++;
+$errors[] = "Student $student_id: Cannot modify - verified marks ({$verified['marks_obtained']}) exist";
+continue;
+} else {
+// Verified record with 0 marks - probably a placeholder
+// Delete it so we can insert fresh
+error_log("Deleting placeholder verified record for $student_id (marks=0)");
+$delete_sql = "DELETE FROM result WHERE result_id = ?";
+$delete_stmt = $connection->prepare($delete_sql);
+$delete_stmt->bind_param("i", $verified['result_id']);
+$delete_stmt->execute();
+// Now proceed with insert/update as normal
+}
+}
+    // if ($verified_exists) {
+    //     $verified_skipped[] = $student_id;
+    //     $skipped_count++;
+    //     $errors[] = "Student $student_id: Cannot modify - verified marks exist for this subject";
+    //     continue;
+    // }
     
     // ===== Check for existing pending result =====
     $check_sql = "SELECT result_id, verification_status FROM result 

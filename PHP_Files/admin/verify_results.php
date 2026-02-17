@@ -180,7 +180,10 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" onclick="rejectResult()">
+                    <!-- <button type="button" class="btn btn-danger" onclick="rejectResult()">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button> -->
+                    <button type="button" class="btn btn-danger" onclick="rejectResult(); event.stopPropagation();">
                         <i class="bi bi-x-circle"></i> Reject
                     </button>
                     <button type="button" class="btn btn-success" onclick="approveResult()">
@@ -335,6 +338,11 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
                 alert('Please provide a reason for rejection');
                 return;
             }
+            // Show loading state
+            const rejectBtn = document.querySelector('.btn-danger');
+            const originalText = rejectBtn.innerHTML;
+            rejectBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Rejecting...';
+            rejectBtn.disabled = true;
             
             fetch('ajax/verify_result.php', {
                 method: 'POST',
@@ -353,7 +361,15 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
                     refreshStats();
                 } else {
                     alert('Error: ' + data.message);
+                    rejectBtn.innerHTML = originalText;
+                    rejectBtn.disabled = false;
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error');
+                rejectBtn.innerHTML = originalText;
+                rejectBtn.disabled = false;
             });
         }
 
