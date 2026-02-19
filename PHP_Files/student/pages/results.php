@@ -403,15 +403,31 @@ function calculateResultStats($results) {
                 </div>
             </div>
         </div>
+        
+        <!-- GPA CARD -->
         <div class="col-lg-3">
             <div class="card bg-primary text-white shadow">
                 <div class="card-body text-center py-3">
-                    <h6 class="text-white-50 mb-1 small text-uppercase tracking-wide">Current GPA</h6>
-                    <div class="display-5 fw-bold mb-0"><?php echo number_format($stats['gpa'], 2); ?></div>
-                    <small class="opacity-75">out of 4.0</small>
+                    <?php 
+                    $is_current_semester = ($selected_semester == $current_semester);
+                    if ($is_current_semester && $payment_check['payment_status'] !== 'Paid'): 
+                    ?>
+                        <!-- Show locked message for unpaid current semester -->
+                        <h6 class="text-white-50 mb-1 small text-uppercase tracking-wide">Current Semester Locked</h6>
+                        <div class="display-5 fw-bold mb-0">
+                            <i class="bi bi-lock-fill"></i>
+                        </div>
+                        <small class="opacity-75">Complete payment to view</small>
+                    <?php else: ?>
+                        <!-- Show normal GPA -->
+                        <h6 class="text-white-50 mb-1 small text-uppercase tracking-wide">Current GPA</h6>
+                        <div class="display-5 fw-bold mb-0"><?php echo number_format($stats['gpa'], 2); ?></div>
+                        <small class="opacity-75">out of 4.0</small>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
+    </div>
     </div>
     
     <!-- Results Table -->
@@ -457,7 +473,7 @@ function calculateResultStats($results) {
                                     <th width="45" class="text-center">Cr</th>
                                     <th width="60" class="text-center">Obtained</th>
                                     <th width="60" class="text-center">Total</th>
-                                    <th width="70" class="text-center">%</th>
+                                    <th width="70" class="text-center">Percentage%</th>
                                     <th width="80" class="text-center">Grade</th>
                                     <th width="110" class="text-center">Status</th>
                                 </tr>
