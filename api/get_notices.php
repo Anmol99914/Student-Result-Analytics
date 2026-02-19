@@ -40,7 +40,7 @@ while($class = $class_result->fetch_assoc()) {
     $verified_count = $verified_stmt->get_result()->fetch_assoc()['verified_count'];
     
     // If ALL results are verified, add to notices
-    if ($expected_total > 0 && $verified_count >= $expected_total) {
+    if ($expected_total > 0 && $verified_count == $expected_total) {
         $class_info[] = [
             'faculty' => $class['faculty'],
             'semester' => $class['semester'],
